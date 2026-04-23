@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOUR OWN WARNET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #f3f4f6; overflow-x: hidden; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(31, 41, 55, 1); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 10px; }
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+        
+        .road-stripes { background-image: linear-gradient(to right, transparent 50%, #9ca3af 50%); background-size: 60px 10px; height: 10px; width: 100%; }
+        .drop-zone-active { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.2) !important; }
+        
+        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
+        
+        .panel-bottom-auto-hide { transition: transform 0.25s ease-in-out; }
+        .panel-bottom-hidden { transform: translateY(90%); }
+        .panel-bottom-visible { transform: translateY(0); }
+        
+        .os-modern-bg { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .neon-on { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #0ea5e9, 0 0 40px #0ea5e9; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #60a5fa, #67e8f9); }
+        .neon-off { text-shadow: none; color: #4b5563; background-image: none; }
+        .window-on { background-color: rgba(22, 78, 99, 0.8); box-shadow: inset 0 0 20px rgba(34,211,238,0.4); }
+        .window-off { background-color: rgba(17, 24, 39, 0.9); box-shadow: inset 0 0 30px rgba(0,0,0,0.8); }
+        
+        .wire-node { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 3px solid #1f2937; transition: all 0.2s; }
+        .wire-selected { box-shadow: 0 0 15px currentColor; transform: scale(1.2); }
+        .wire-connected { opacity: 0.4; pointer-events: none; }
+        
+        .grid-slot { transition: all 0.15s ease; }
+        .grid-slot:hover { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1); }
+        .slot-terkunci { background: repeating-linear-gradient(45deg, #1f2937, #1f2937 10px, #111827 10px, #111827 20px); border-color: #4b5563 !important; }
+        .slot-drag-over { border-color: #10b981 !important; background-color: rgba(16, 185, 129, 0.2) !important; }
+        
+        .pc-item-bawah { min-width: 140px; transition: all 0.15s; }
+        .pc-item-bawah:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        
+        .expan-slot { width: 85px; height: 85px; }
+        @media (min-width: 768px) { .expan-slot { width: 100px; height: 100px; } }
+        .area-terkunci-overlay { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .tab-ruangan { transition: all 0.2s; }
+        .tab-ruangan-aktif { background-color: #1e40af; border-color: #3b82f6; color: white; }
+        .tab-ruangan-terkunci { background-color: #1f2937; border-color: #4b5563; color: #9ca3af; }
+        
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .splash-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); }
+        
+        .rank-perintis { color: #cd7f32; }
+        .rank-pembangun { color: #c0c0c0; }
+        .rank-epic { color: #ffd700; }
+        .rank-hero { color: #9b59b6; }
+        .rank-legenda { color: #e74c3c; }
+        .rank-ultimate { background: linear-gradient(135deg, #ffd700, #ff6b6b, #9b59b6, #3498db); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="fixed inset-0 z-[200] splash-gradient flex flex-col items-center justify-center">
+        <div class="text-center animate-float">
+            <div class="text-8xl mb-6">🏢</div>
+            <h1 class="text-5xl md:text-7xl font-black tracking-widest mb-4 neon-on">
+                YOUR OWN<br>WARNET
+            </h1>
+            <p class="text-gray-400 mb-12 text-sm tracking-wider">BUILD • EXPAND • DOMINATE</p>
+            <div class="flex flex-col gap-4 min-w-[250px]">
+                <button id="splash-btn-mulai" onclick="mulaiGameDariAwal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-blue-900/50 text-xl transition-all hover:scale-105 hidden">
+                    Mulai Petualangan
+                </button>
+                <button id="splash-btn-lanjutkan" onclick="lanjutkanGame()" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-green-900/50 text-xl transition-all hover:scale-105 hidden">
+                    Lanjutkan
+                </button>
+            </div>
+            <p class="text-gray-600 text-xs mt-8">v2.1 • Rating Fixed</p>
+        </div>
+    </div>
+
+    <!-- POPUP INPUT NAMA AWAL -->
+    <div id="popup-nama-awal" class="fixed inset-0 bg-black/90 z-[150] hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-gray-800 p-8 rounded-2xl border border-blue-500 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="text-5xl mb-4">🏪</div>
+                <h2 class="text-2xl font-bold text-blue-400 mb-2">Selamat Datang, Juragan!</h2>
+                <p class="text-gray-400 text-sm">Sebelum mulai, beri nama untuk warnetmu</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Nama Warnet</label>
+                    <input type="text" id="input-nama-warnet" value="WARNET KITA" maxlength="25" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Nama Panggilan</label>
+                    <input type="text" id="input-nama-user" value="Juragan Warnet" maxlength="20" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none">
+                </div>
+            </div>
+            <button onclick="konfirmasiNamaAwal()" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-900/50 transition-colors">
+                Mulai Usaha!
+            </button>
+        </div>
+    </div>
+
+    <!-- POPUP RESET KONFIRMASI -->
+    <div id="popup-reset-confirm" class="fixed inset-0 bg-black/90 z-[150] hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-gray-800 p-8 rounded-2xl border-2 border-red-600 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="text-5xl mb-4">⚠️</div>
+                <h2 class="text-2xl font-bold text-red-500 mb-2">PERINGATAN KERAS!</h2>
+                <p class="text-gray-300 text-sm">Semua progres akan hilang selamanya.<br>Ini tidak bisa dibatalkan.</p>
+            </div>
+            <div class="bg-red-950/50 border border-red-800 rounded-lg p-4 mb-4">
+                <p class="text-xs text-red-300 mb-2">Ketik <span class="font-bold text-white bg-red-900 px-2 py-0.5 rounded">WARNETLIFE</span> untuk konfirmasi:</p>
+                <input type="text" id="input-reset-confirm" placeholder="WARNETLIFE" class="w-full bg-gray-900 border border-red-600 rounded-lg px-4 py-3 text-white font-bold text-center focus:border-red-500 focus:outline-none">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="tutupPopupReset()" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-lg transition-colors">Batal</button>
+                <button onclick="prosesReset()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-red-900/50 transition-colors">Reset Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MODAL KONFIRMASI -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black/80 z-[90] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-600 max-w-sm w-full text-center shadow-2xl">
+            <div id="confirm-icon" class="text-4xl mb-4">🛒</div>
+            <h3 id="confirm-title" class="text-lg font-bold mb-2 text-blue-400">Konfirmasi</h3>
+            <p id="confirm-msg" class="text-sm text-gray-300 mb-6">Yakin ingin melanjutkan?</p>
+            <div class="flex gap-4">
+                <button onclick="batalConfirm()" class="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded-lg font-bold text-white transition-colors">Batal</button>
+                <button onclick="prosesConfirm()" class="flex-1 bg-green-600 hover:bg-green-500 py-2 rounded-lg font-bold text-white transition-colors shadow-lg shadow-green-900/50">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MINIGAME KABEL -->
+    <div id="modal-kabel" class="fixed inset-0 bg-black/90 z-[95] hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-gray-800 p-6 rounded-xl border-4 border-gray-600 w-[90%] max-w-md shadow-[0_0_50px_rgba(0,0,0,1)] relative">
+            <h2 class="text-xl font-black text-red-500 mb-2 text-center animate-pulse tracking-widest">⚠️ KONSLETING LISTRIK!</h2>
+            <p class="text-gray-400 text-xs text-center mb-6">Klik warna di KIRI, lalu pasangkan ke warna yang sama di KANAN!</p>
+            <div class="flex justify-between items-center bg-gray-900 p-6 rounded-lg border border-gray-700 relative">
+                <div id="kabel-kiri" class="flex flex-col gap-6 relative z-10"></div>
+                <div id="kabel-kanan" class="flex flex-col gap-6 relative z-10"></div>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20"><span class="text-6xl">⚡</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PUSAT EKSPEDISI -->
+    <div id="modal-paket-backdrop" onclick="if(event.target === this) tutupModalPaket()" class="fixed inset-0 bg-black/60 z-[60] hidden flex justify-end backdrop-blur-sm transition-opacity">
+        <div class="w-80 sm:w-96 bg-gray-800 h-full max-h-screen flex flex-col shadow-2xl slide-in-right border-l border-gray-600">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900">
+                <h3 class="font-bold flex items-center gap-2 text-lg"><span class="text-2xl">📦</span> Pusat Ekspedisi</h3>
+                <button onclick="tutupModalPaket()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
+            <div id="list-paket-container" class="p-4 flex-grow overflow-y-auto custom-scroll space-y-3"></div>
+            <div class="p-4 border-t border-gray-700 bg-gray-900">
+                <button onclick="ambilSemuaPaket()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-900/50">Ambil Semua Barang Ready</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BWKAS SELL -->
+    <div id="modal-bwkas-backdrop" onclick="if(event.target === this) tutupModalBwkas()" class="fixed inset-0 bg-black/60 z-[60] hidden flex justify-end backdrop-blur-sm transition-opacity">
+        <div class="w-80 sm:w-[450px] bg-amber-900/95 h-full max-h-screen flex flex-col shadow-2xl slide-in-right border-l border-amber-600">
+            <div class="p-4 border-b border-amber-700 flex justify-between items-center bg-amber-950">
+                <h3 class="font-bold flex items-center gap-2 text-lg text-amber-200"><span class="text-2xl">🤝</span> Toko BwKas Sell</h3>
+                <button onclick="tutupModalBwkas()" class="text-amber-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
+            <div class="p-3 bg-amber-800/50 text-xs text-amber-100 border-b border-amber-700">
+                <p><b>Bang BwKas:</b> "Bawa barang apa lu? Kalo masih mulus gue bayar 60%. Kalo rusak, rongsokan doang 15% harga."</p>
+            </div>
+            <div id="list-bwkas-container" class="p-4 flex-grow overflow-y-auto custom-scroll space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- MODAL SERFICE INHIR -->
+    <div id="modal-serfice-backdrop" onclick="if(event.target === this) tutupModalSerfice()" class="fixed inset-0 bg-black/60 z-[60] hidden flex justify-end backdrop-blur-sm transition-opacity">
+        <div class="w-80 sm:w-[450px] bg-slate-800/95 h-full max-h-screen flex flex-col shadow-2xl slide-in-right border-l border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+                <h3 class="font-bold flex items-center gap-2 text-lg text-slate-200"><span class="text-2xl">🔧</span> SerFice Inhir</h3>
+                <button onclick="tutupModalSerfice()" class="text-slate-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
+            <div class="p-3 bg-slate-700/50 text-xs text-slate-300 border-b border-slate-600">
+                <p><b>Mang Inhir:</b> "PC rusak abis dipukul bocil? Sini gue benerin. Bayar 35% dari harga asli, tunggu 20 detik beres!"</p>
+            </div>
+            <h4 class="px-4 pt-4 font-bold text-sm text-cyan-400">Antrean Servis (Lagi dikerjain)</h4>
+            <div id="list-servis-aktif" class="px-4 pb-2 space-y-2 mt-2 border-b border-slate-700 min-h-[50px]"></div>
+            <h4 class="px-4 pt-4 font-bold text-sm text-red-400">Barang Rusak di Gudang</h4>
+            <div id="list-serfice-container" class="p-4 flex-grow overflow-y-auto custom-scroll space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- MODAL LAYOUT WARNET FULLSCREEN -->
+    <div id="modal-layout-backdrop" class="fixed inset-0 bg-black/95 z-[70] hidden flex-col">
+        <div class="bg-gray-900 border-b border-gray-700 p-4 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                    <span>🏗️</span> Denah - <span id="layout-nama-ruangan">Ruang Utama</span>
+                </h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="tutupModalLayout()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg transition-colors border-2 border-red-800 shadow-lg">
+                    Kembali ke Dashboard
+                </button>
+            </div>
+        </div>
+        <div class="flex-grow flex items-center justify-center p-4 overflow-auto relative" id="layout-grid-wrapper">
+            <div id="layout-grid-container" class="grid gap-5 p-6 bg-gray-800/30 rounded-2xl border border-gray-700 shadow-inner" style="grid-template-columns: repeat(3, 1fr); min-width: min-content;"></div>
+        </div>
+        <div id="panel-pc-siap-bawah" class="panel-bottom-auto-hide panel-bottom-visible fixed bottom-0 left-0 right-0 bg-gray-900/95 border-t border-gray-700 shadow-2xl z-20 backdrop-blur-sm">
+            <div id="panel-bottom-handle" class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-blue-600 rounded-t-lg flex items-center justify-center cursor-pointer shadow-lg border-x border-t border-blue-500">
+                <span class="text-white text-sm font-bold">▲ PC Siap</span>
+            </div>
+            <div class="p-3">
+                <div class="flex items-center justify-between mb-2 px-2">
+                    <h3 class="font-bold text-blue-300 text-sm flex items-center gap-2">
+                        <span>📦</span> PC Siap Pasang 
+                        <span id="count-pc-siap-layout" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                    </h3>
+                    <p class="text-[10px] text-gray-400">Drag PC ke slot kosong di atas</p>
+                </div>
+                <div id="layout-pc-siap-container-bawah" class="flex gap-3 overflow-x-auto custom-scroll pb-2 px-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME CONTAINER -->
+    <div id="game-container" class="hidden flex-col flex-grow">
+        <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40 shadow-md">
+            <div class="max-w-7xl mx-auto p-4 flex justify-between items-center border-b border-gray-700">
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl">🌐</span>
+                    <h1 id="header-nama-warnet" class="text-xl md:text-2xl font-bold text-blue-400 tracking-tight">WARNET KITA</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="header-nama-user" class="text-gray-300 text-sm font-bold bg-gray-900 px-3 py-1 rounded-lg border border-gray-700">Juragan Warnet</span>
+                    <button id="btn-status-toko" onclick="toggleToko()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg transition-colors border-2 border-red-800 shadow-lg">
+                        Toko TUTUP
+                    </button>
+                </div>
+            </div>
+            <div class="max-w-7xl mx-auto p-3 flex flex-wrap gap-4 text-sm font-semibold justify-between items-center bg-gray-800">
+                <div class="flex gap-4">
+                    <div class="bg-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-700 shadow-inner w-28 justify-center">
+                        <span>🕒</span><span id="ui-jam" class="text-blue-300 font-mono text-base font-tech">08:00</span>
+                    </div>
+                    <div class="bg-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-700 shadow-inner min-w-[150px]">
+                        <span>💰</span><span id="ui-uang" class="text-green-400 font-mono text-base font-tech">Rp 1.500.000</span>
+                    </div>
+                    <div class="bg-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-700 shadow-inner min-w-[100px] cursor-help" title="Sisa Token Listrik">
+                        <span id="ui-icon-listrik" class="text-yellow-400">⚡</span>
+                        <span id="ui-token" class="text-yellow-400 font-mono text-base font-tech">1000</span>
+                    </div>
+                </div>
+                <div class="flex gap-4 w-full md:w-auto">
+                    <div class="bg-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-700 shadow-inner cursor-help" title="Rating Warnet">
+                        <span>⭐</span>
+                        <span id="ui-rating" class="text-yellow-400 font-bold">0.0 / 10</span>
+                    </div>
+                    <div class="bg-gray-900 px-4 py-2 rounded-lg flex flex-col justify-center border border-gray-700 shadow-inner flex-grow md:w-48">
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-blue-300 font-bold">LVL <span id="ui-level" class="text-white text-sm">1</span></span>
+                            <span id="ui-xp-text" class="text-gray-400">0/10 XP</span>
+                        </div>
+                        <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div id="ui-xp-bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%; box-shadow: 0 0 10px #3b82f6;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <nav class="max-w-7xl mx-auto px-4 flex gap-1 pb-0 overflow-x-auto custom-scroll bg-gray-800 pt-2">
+                <button onclick="pindahHalaman('komputer')" id="tab-komputer" class="nav-tab px-5 py-3 bg-gray-900 border-t border-l border-r border-gray-700 rounded-t-lg font-bold text-blue-400 whitespace-nowrap">💻 Komputer OP</button>
+                <button onclick="pindahHalaman('rakit')" id="tab-rakit" class="nav-tab px-5 py-3 bg-gray-800 hover:bg-gray-700 border-b border-gray-700 text-gray-400 font-bold transition-colors whitespace-nowrap">🛠️ Rakit & Gudang</button>
+                <button onclick="pindahHalaman('warnet')" id="tab-warnet" class="nav-tab px-5 py-3 bg-gray-800 hover:bg-gray-700 border-b border-gray-700 text-gray-400 font-bold transition-colors whitespace-nowrap">🗺️ Layout Warnet</button>
+                <button onclick="pindahHalaman('bangunan')" id="tab-bangunan" class="nav-tab px-5 py-3 bg-gray-800 hover:bg-gray-700 border-b border-gray-700 text-gray-400 font-bold transition-colors whitespace-nowrap relative">
+                    🏢 Luar Warnet
+                    <span id="notif-paket-tab" class="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">!</span>
+                </button>
+                <button onclick="pindahHalaman('profil')" id="tab-profil" class="nav-tab px-5 py-3 bg-gray-800 hover:bg-gray-700 border-b border-gray-700 text-gray-400 font-bold transition-colors whitespace-nowrap">👤 Profil</button>
+            </nav>
+        </header>
+
+        <main class="flex-grow max-w-7xl mx-auto w-full p-4 flex flex-col">
+
+            <!-- HALAMAN KOMPUTER OP -->
+            <div id="halaman-komputer" class="halaman-panel flex flex-grow">
+                <div class="w-full h-[75vh] min-h-[600px] bg-gray-900 rounded-2xl p-3 border-b-8 border-gray-800 shadow-2xl relative flex flex-col items-center">
+                    <div class="relative w-full flex-grow os-modern-bg rounded-xl border border-gray-700 overflow-hidden shadow-inner flex flex-col">
+                        <div class="absolute inset-0 p-6 flex flex-col flex-wrap gap-6 items-start z-10 content-start">
+                            <div onclick="bukaAppOS('billing')" class="cursor-pointer flex flex-col items-center w-24 group"><div class="w-16 h-16 bg-blue-500 group-hover:bg-blue-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform group-hover:scale-105 transition-all">🖥️</div><span class="text-white font-bold text-xs mt-2 px-2 py-1 bg-black/40 rounded-lg drop-shadow-md">Billing's</span></div>
+                            <div onclick="bukaAppOS('toko')" class="cursor-pointer flex flex-col items-center w-24 group"><div class="w-16 h-16 bg-purple-500 group-hover:bg-purple-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform group-hover:scale-105 transition-all">🛒</div><span class="text-white font-bold text-xs mt-2 px-2 py-1 bg-black/40 rounded-lg drop-shadow-md">NetShop</span></div>
+                            <div onclick="bukaAppOS('rating')" class="cursor-pointer flex flex-col items-center w-24 group"><div class="w-16 h-16 bg-yellow-500 group-hover:bg-yellow-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform group-hover:scale-105 transition-all">⭐</div><span class="text-white font-bold text-xs mt-2 px-2 py-1 bg-black/40 rounded-lg drop-shadow-md">RateThings</span></div>
+                            <div onclick="bukaAppOS('mylamp')" class="cursor-pointer flex flex-col items-center w-24 group"><div class="w-16 h-16 bg-teal-500 group-hover:bg-teal-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform group-hover:scale-105 transition-all">💡</div><span class="text-white font-bold text-xs mt-2 px-2 py-1 bg-black/40 rounded-lg drop-shadow-md">MyLamp</span></div>
+                            <div onclick="bukaAppOS('expan')" class="cursor-pointer flex flex-col items-center w-24 group"><div class="w-16 h-16 bg-orange-500 group-hover:bg-orange-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform group-hover:scale-105 transition-all">🏗️</div><span class="text-white font-bold text-xs mt-2 px-2 py-1 bg-black/40 rounded-lg drop-shadow-md">ExPan</span></div>
+                        </div>
+
+                        <!-- APP BILLING'S -->
+                        <div id="os-app-billing" class="hidden absolute inset-2 bottom-16 bg-gray-800/95 backdrop-blur-md rounded-2xl border border-gray-600 flex-col z-20 shadow-2xl overflow-hidden">
+                            <div class="h-12 bg-gray-900/80 flex justify-between items-center px-4 border-b border-gray-700"><h3 class="text-blue-400 font-bold text-sm flex items-center gap-2">🖥️ Billing's App</h3><button onclick="tutupAppOS('billing')" class="text-gray-400 hover:text-white bg-gray-700 hover:bg-red-500 rounded-full h-7 w-7 flex items-center justify-center transition-colors font-bold">&times;</button></div>
+                            <div id="overlay-mati-lampu" class="absolute inset-0 top-12 bg-black/80 z-30 flex flex-col items-center justify-center hidden"><div class="text-6xl mb-4 animate-bounce">🌑</div><h2 class="text-red-500 font-black text-2xl tracking-widest uppercase">Koneksi Terputus</h2><p class="text-gray-300 mt-2">Warnet sedang mati lampu!</p><button onclick="tutupAppOS('billing')" class="mt-6 bg-red-600 hover:bg-red-500 px-6 py-2 rounded-lg font-bold text-white">Tutup App</button></div>
+                            <div class="flex-grow p-4 overflow-y-auto custom-scroll" id="pc-container-pelayanan"></div>
+                        </div>
+
+                        <!-- APP NETSHOP -->
+                        <div id="os-app-toko" class="hidden absolute inset-2 bottom-16 bg-gray-800/95 backdrop-blur-md rounded-2xl border border-gray-600 flex-col z-20 shadow-2xl overflow-hidden">
+                            <div class="h-12 bg-gray-900/80 flex justify-between items-center px-4 border-b border-gray-700"><h3 class="text-purple-400 font-bold text-sm flex items-center gap-2">🛒 NetShop - E-Commerce</h3><button onclick="tutupAppOS('toko')" class="text-gray-400 hover:text-white bg-gray-700 hover:bg-red-500 rounded-full h-7 w-7 flex items-center justify-center transition-colors font-bold">&times;</button></div>
+                            <div class="flex-grow overflow-y-auto custom-scroll p-6">
+                                <div class="space-y-6 max-w-5xl mx-auto pb-8">
+                                    <div><h3 class="font-bold text-yellow-500 border-b border-gray-600 mb-4 inline-block pr-4 font-tech">▶ TIER KENTANG</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-600 flex flex-col shadow-lg"><div class="flex justify-between text-2xl mb-2"><span>🪑</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Dasar</span></div><h4 class="font-bold text-sm text-blue-100">Meja Kentang</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 50.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 1.000/jam | Kirim: 10s</p><div class="flex gap-2 items-center"><input type="number" id="qty-mk" value="1" min="1" class="w-16 bg-gray-900 border border-blue-600 rounded p-1 text-center text-sm outline-none text-blue-200"><button onclick="siapkanBeli('qty-mk', 'Meja Kentang', 'dasar', '🪑', 1000, 50000, 10)" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-600 flex flex-col shadow-lg"><div class="flex justify-between text-2xl mb-2"><span>🖥️</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Exp.</span></div><h4 class="font-bold text-sm text-blue-100">TV Kentang</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 150.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 1.500/jam | Kirim: 15s</p><div class="flex gap-2 items-center"><input type="number" id="qty-tk" value="1" min="1" class="w-16 bg-gray-900 border border-blue-600 rounded p-1 text-center text-sm outline-none text-blue-200"><button onclick="siapkanBeli('qty-tk', 'TV Kentang', 'experience', '🖥️', 1500, 150000, 15)" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-600 flex flex-col shadow-lg"><div class="flex justify-between text-2xl mb-2"><span>⚙️</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Core</span></div><h4 class="font-bold text-sm text-blue-100">PC Kentang</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 300.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 2.500/jam | Kirim: 20s</p><div class="flex gap-2 items-center"><input type="number" id="qty-pk" value="1" min="1" class="w-16 bg-gray-900 border border-blue-600 rounded p-1 text-center text-sm outline-none text-blue-200"><button onclick="siapkanBeli('qty-pk', 'PC Kentang', 'core', '⚙️', 2500, 300000, 20)" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                    </div></div>
+                                    <div><h3 class="font-bold text-purple-400 border-b border-gray-600 mb-4 inline-block pr-4 font-tech">▶ TIER BIASA</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-purple-900 shadow-lg flex flex-col"><div class="flex justify-between text-2xl mb-2"><span>💺</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Dasar</span></div><h4 class="font-bold text-sm text-blue-100">Meja Biasa</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 200.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 3.000/jam | Kirim: 20s</p><div class="flex gap-2 items-center"><input type="number" id="qty-mb" value="1" min="1" class="w-16 bg-gray-900 border border-purple-600 rounded p-1 text-center text-sm outline-none text-purple-200"><button onclick="siapkanBeli('qty-mb', 'Meja Biasa', 'dasar', '💺', 3000, 200000, 20)" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-purple-900 shadow-lg flex flex-col"><div class="flex justify-between text-2xl mb-2"><span>💻</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Exp.</span></div><h4 class="font-bold text-sm text-blue-100">Monitor Biasa</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 500.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 5.000/jam | Kirim: 30s</p><div class="flex gap-2 items-center"><input type="number" id="qty-tb" value="1" min="1" class="w-16 bg-gray-900 border border-purple-600 rounded p-1 text-center text-sm outline-none text-purple-200"><button onclick="siapkanBeli('qty-tb', 'Monitor Biasa', 'experience', '💻', 5000, 500000, 30)" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-purple-900 shadow-lg flex flex-col"><div class="flex justify-between text-2xl mb-2"><span>🖥️</span><span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded">Core</span></div><h4 class="font-bold text-sm text-blue-100">PC Biasa</h4><p class="text-green-400 font-bold text-sm mb-1">Rp 800.000</p><p class="text-[11px] text-gray-400 mb-3 flex-grow">Tarif: +Rp 7.000/jam | Kirim: 40s</p><div class="flex gap-2 items-center"><input type="number" id="qty-pb" value="1" min="1" class="w-16 bg-gray-900 border border-purple-600 rounded p-1 text-center text-sm outline-none text-purple-200"><button onclick="siapkanBeli('qty-pb', 'PC Biasa', 'core', '🖥️', 7000, 800000, 40)" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-sm transition-colors shadow-md">Beli</button></div></div>
+                                    </div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- APP RATETHINGS -->
+                        <div id="os-app-rating" class="hidden absolute inset-2 bottom-16 bg-gray-900/95 backdrop-blur-md rounded-2xl border border-yellow-600 flex-col z-20 shadow-2xl overflow-hidden">
+                            <div class="h-12 bg-gray-950/80 flex justify-between items-center px-4 border-b border-yellow-700"><h3 class="text-yellow-400 font-bold text-sm flex items-center gap-2">⭐ RateThings - Reputasi Warnet</h3><button onclick="tutupAppOS('rating')" class="text-gray-400 hover:text-white bg-gray-800 hover:bg-red-500 rounded-full h-7 w-7 flex items-center justify-center transition-colors font-bold">&times;</button></div>
+                            <div class="flex-grow overflow-y-auto custom-scroll p-6" id="app-rating-content"></div>
+                        </div>
+
+                        <!-- APP MYLAMP -->
+                        <div id="os-app-mylamp" class="hidden absolute inset-2 bottom-16 bg-slate-900/95 backdrop-blur-md rounded-2xl border border-teal-600 flex-col z-20 shadow-2xl overflow-hidden">
+                            <div class="h-12 bg-slate-950/80 flex justify-between items-center px-4 border-b border-teal-700"><h3 class="text-teal-400 font-bold text-sm flex items-center gap-2">💡 PLN MyLamp - Prabayar</h3><button onclick="tutupAppOS('mylamp')" class="text-gray-400 hover:text-white bg-slate-800 hover:bg-red-500 rounded-full h-7 w-7 flex items-center justify-center transition-colors font-bold">&times;</button></div>
+                            <div class="flex-grow overflow-y-auto custom-scroll p-6 flex flex-col items-center">
+                                <div class="w-full max-w-md bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center shadow-lg relative overflow-hidden"><div class="absolute -top-10 -right-10 text-9xl opacity-10">⚡</div><h4 class="text-slate-400 font-bold text-sm tracking-widest mb-2 uppercase">Sisa Token Listrik</h4><p class="text-6xl font-black text-teal-400 font-tech" id="app-token-display">1000</p><p class="text-xs text-slate-500 mt-2">Daya berkurang 0.5 per detik per PC.</p></div>
+                                <div class="w-full max-w-md mt-8"><h4 class="font-bold text-teal-300 border-b border-slate-700 pb-2 mb-4">▶ BELI TOKEN</h4><div class="grid grid-cols-2 gap-4">
+                                    <button onclick="beliToken(500, 10000)" class="bg-slate-800 hover:bg-teal-900 border border-slate-600 hover:border-teal-500 rounded-xl p-4 text-left transition-all group shadow-md"><h5 class="font-bold text-teal-400 text-lg">500 Token</h5><p class="text-green-400 text-sm font-bold font-tech mt-1">Rp 10.000</p></button>
+                                    <button onclick="beliToken(1000, 18000)" class="bg-slate-800 hover:bg-teal-900 border border-slate-600 hover:border-teal-500 rounded-xl p-4 text-left transition-all group shadow-md"><h5 class="font-bold text-teal-400 text-lg">1000 Token</h5><p class="text-green-400 text-sm font-bold font-tech mt-1">Rp 18.000</p></button>
+                                    <button onclick="beliToken(2500, 40000)" class="bg-slate-800 hover:bg-teal-900 border border-slate-600 hover:border-teal-500 rounded-xl p-4 text-left transition-all group shadow-md col-span-2"><h5 class="font-bold text-teal-400 text-lg flex items-center gap-2">2500 Token <span class="bg-red-500 text-white text-[10px] px-2 rounded">HEMAT</span></h5><p class="text-green-400 text-sm font-bold font-tech mt-1">Rp 40.000</p></button>
+                                </div></div>
+                            </div>
+                        </div>
+
+                        <!-- APP EXPAN -->
+                        <div id="os-app-expan" class="hidden absolute inset-2 bottom-16 bg-gray-800/95 backdrop-blur-md rounded-2xl border border-orange-600 flex-col z-20 shadow-2xl overflow-hidden">
+                            <div class="h-12 bg-gray-900/80 flex justify-between items-center px-4 border-b border-orange-700"><h3 class="text-orange-400 font-bold text-sm flex items-center gap-2">🏗️ ExPan - Ekspansi Warnet</h3><button onclick="tutupAppOS('expan')" class="text-gray-400 hover:text-white bg-gray-700 hover:bg-red-500 rounded-full h-7 w-7 flex items-center justify-center transition-colors font-bold">&times;</button></div>
+                            <div class="flex-grow overflow-y-auto custom-scroll p-4">
+                                <div class="max-w-4xl mx-auto">
+                                    <div class="flex justify-center gap-2 mb-6">
+                                        <button id="expan-tab-kiri" onclick="pilihRuanganExpan('kiri')" class="tab-ruangan tab-ruangan-terkunci px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2"><span>🔒</span> Ruang Kiri</button>
+                                        <button id="expan-tab-tengah" onclick="pilihRuanganExpan('tengah')" class="tab-ruangan tab-ruangan-aktif px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2"><span>🏠</span> Ruang Utama</button>
+                                        <button id="expan-tab-kanan" onclick="pilihRuanganExpan('kanan')" class="tab-ruangan tab-ruangan-terkunci px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2"><span>🔒</span> Ruang Kanan</button>
+                                    </div>
+                                    <div id="expan-area-belakang" class="area-terkunci-overlay rounded-xl p-4 border-2 border-gray-600 mb-4">
+                                        <div class="flex justify-between items-center mb-3"><h4 class="text-gray-300 text-sm font-bold flex items-center gap-2"><span id="expan-icon-belakang">🔒</span> Area Belakang <span id="expan-badge-belakang" class="bg-gray-700 text-gray-300 text-[10px] px-2 py-0.5 rounded">TERKUNCI</span></h4><button id="expan-btn-beli-belakang" onclick="beliArea('belakang')" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed">Buka Area (Rp 750.000)</button></div>
+                                        <div class="grid grid-cols-3 gap-3" id="expan-grid-belakang"></div>
+                                    </div>
+                                    <div class="bg-gray-900 rounded-xl p-4 border-2 border-green-500/50"><div class="flex justify-between items-center mb-3"><h4 class="text-green-300 text-sm font-bold flex items-center gap-2"><span>✅</span> Area Depan <span id="expan-badge-depan" class="bg-green-600 text-white text-[10px] px-2 py-0.5 rounded">AKTIF</span></h4></div><div class="grid grid-cols-3 gap-3" id="expan-grid-depan"></div></div>
+                                    <div id="expan-info-syarat" class="mt-4 p-3 bg-gray-700/50 rounded-lg border border-gray-600 text-xs text-gray-300 text-center">💡 Beli 4 slot di Area Depan untuk buka Area Belakang</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TASKBAR -->
+                        <div class="absolute bottom-0 w-full h-14 bg-slate-900/80 backdrop-blur-lg flex items-center px-3 justify-between z-30 border-t border-white/10">
+                            <div class="flex items-center gap-3"><button onclick="matikanKomputer()" class="bg-rose-500 hover:bg-rose-400 text-white rounded-xl px-4 py-2 font-bold flex items-center gap-2 shadow-[0_0_10px_rgba(244,63,94,0.4)] transition-transform hover:scale-105 active:scale-95"><span class="text-lg leading-none">⏻</span> Tutup OP</button><div id="os-active-apps" class="flex gap-2 h-full py-2 items-center"></div></div>
+                            <div class="bg-black/40 text-gray-200 text-sm font-bold px-4 py-2 rounded-xl border border-white/5 font-tech" id="os-clock">08:00 AM</div>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-4 bg-gray-800 w-1/3 h-4 rounded-b-xl border-x-4 border-b-4 border-gray-700"></div>
+                </div>
+            </div>
+
+            <!-- HALAMAN RAKIT & GUDANG -->
+            <div id="halaman-rakit" class="halaman-panel hidden grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg flex flex-col max-h-[650px]"><div class="p-4 border-b border-gray-700 flex justify-between items-center"><h2 class="text-lg font-bold flex items-center gap-2"><span class="text-2xl">🎒</span> Inventori Gudang</h2></div><div id="inventori-container" class="p-4 overflow-y-auto custom-scroll space-y-3 flex-grow"></div></div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex flex-col">
+                    <div class="text-center mb-6 border-b border-gray-700 pb-4"><h2 class="text-2xl font-bold flex items-center justify-center gap-2"><span class="text-3xl">🛠️</span> Meja Perakitan</h2></div>
+                    <div class="space-y-4 flex-grow"><div id="rakit-dasar"></div><div id="rakit-experience"></div><div id="rakit-core"></div></div>
+                    <button id="btn-selesai-rakit" onclick="selesaikanRakitan()" class="w-full mt-4 bg-gray-600 text-gray-400 py-3 rounded-lg font-bold cursor-not-allowed transition-colors" disabled>Komponen Belum Lengkap</button>
+                    <div class="mt-6 border-t border-gray-700 pt-4"><h3 class="font-bold mb-2 flex justify-between items-center text-sm text-gray-300"><span>📦 PC Siap Bongkar</span></h3><div id="list-pc-bongkar" class="space-y-2 max-h-32 overflow-y-auto custom-scroll"></div></div>
+                </div>
+            </div>
+
+            <!-- HALAMAN LAYOUT WARNET -->
+            <div id="halaman-warnet" class="halaman-panel hidden space-y-6">
+                <div class="flex justify-end"><button onclick="bukaModalLayout()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-900/50 flex items-center gap-3 text-lg transition-all hover:scale-105"><span class="text-2xl">🗺️</span> Buka Denah</button></div>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                    <div ondragover="allowDrop(event)" ondragenter="this.classList.add('drop-zone-active')" ondragleave="this.classList.remove('drop-zone-active')" ondrop="kembalikanKeGudang(event)" id="area-kembali-gudang" class="lg:col-span-1 space-y-4 bg-gray-800 p-4 rounded-xl border-2 border-dashed border-gray-600 shadow-lg transition-all"><h3 class="font-bold border-b border-gray-700 pb-2 flex justify-between items-center text-gray-300"><span>📦 Tarik ke sini (Edit)</span><span id="badge-siap" class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">0</span></h3><div id="list-pc-siap" class="space-y-3 min-h-[150px] max-h-[60vh] overflow-y-auto custom-scroll pr-2 pointer-events-none"></div></div>
+                    <div class="lg:col-span-3 bg-gray-900 p-6 rounded-xl border border-gray-700 relative overflow-hidden shadow-inner min-h-[400px]"><div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#4b5563 1px, transparent 1px); background-size: 20px 20px;"></div><div id="grid-warnet" class="grid grid-cols-2 sm:grid-cols-3 gap-6 relative z-10"></div></div>
+                </div>
+            </div>
+
+            <!-- HALAMAN LUAR WARNET -->
+            <div id="halaman-bangunan" class="halaman-panel hidden space-y-6 relative">
+                <div class="border-b border-gray-700 pb-2"><h2 class="text-xl font-bold flex items-center gap-2"><span class="text-2xl">🏢</span> Eksterior & Pertokoan</h2></div>
+                <div class="relative w-full h-[550px] bg-emerald-500 border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                    <div id="overlay-mati-lampu-luar" class="absolute inset-0 bg-black/80 z-20 pointer-events-none hidden transition-opacity duration-1000"></div>
+                    <div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(#22c55e 2px, transparent 2px); background-size: 30px 30px;"></div>
+                    <div id="day-night-overlay" class="absolute inset-0 pointer-events-none z-30 transition-colors duration-1000" style="background-color: rgba(0,0,0,0);"></div>
+                    <div class="absolute top-1/4 left-0 w-full h-40 bg-gray-800 border-y-8 border-gray-600 flex items-center shadow-2xl z-0"><div class="road-stripes"></div></div>
+                    <div onclick="bukaModalPaket()" class="absolute top-8 right-10 md:right-16 w-24 md:w-32 bg-gray-800 border-4 border-orange-600 rounded-t-xl rounded-b-md shadow-2xl group z-10 cursor-pointer hover:scale-105 transition-transform"><div class="bg-orange-600 py-1 text-center font-black text-white text-[10px] tracking-wider">EKSPEDISI</div><div class="p-2 flex justify-center items-end bg-gray-700 relative h-16"><div class="text-4xl group-hover:-translate-y-1 transition-transform">📦</div><div id="notif-paket-building" class="absolute -top-3 -right-3 bg-red-500 border-2 border-white text-white font-bold rounded-full w-6 h-6 flex items-center justify-center animate-bounce hidden text-xs shadow-lg">!</div></div></div>
+                    <div onclick="bukaModalBwkas()" class="absolute top-8 right-40 md:right-56 w-24 md:w-32 bg-amber-900 border-4 border-amber-600 rounded-t-xl rounded-b-md shadow-2xl group z-10 cursor-pointer hover:scale-105 transition-transform"><div class="bg-amber-600 py-1 text-center font-black text-white text-[10px] tracking-wider">BWKAS SELL</div><div class="p-2 flex justify-center items-end bg-amber-800 relative h-16"><div class="text-4xl group-hover:-translate-y-1 transition-transform">🤝</div></div></div>
+                    <div onclick="bukaModalSerfice()" class="absolute top-8 right-64 md:right-96 w-24 md:w-32 bg-slate-800 border-4 border-slate-500 rounded-t-xl rounded-b-md shadow-2xl group z-10 cursor-pointer hover:scale-105 transition-transform"><div class="bg-slate-500 py-1 text-center font-black text-white text-[10px] tracking-wider">SERFICE</div><div class="p-2 flex justify-center items-end bg-slate-700 relative h-16"><div class="text-4xl group-hover:-translate-y-1 transition-transform">🔧</div></div></div>
+                    <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[90%] max-w-3xl flex flex-col items-center justify-end z-10">
+                        <div class="bg-gray-900 border-4 border-blue-500 rounded-xl px-6 md:px-12 py-2 mb-[-12px] z-20 shadow-[0_0_20px_rgba(59,130,246,0.5)]"><h2 id="neon-warnet" class="text-2xl md:text-4xl font-black tracking-widest neon-on transition-all duration-500">WARNET KITA</h2></div>
+                        <div class="w-full h-56 bg-gray-800 border-t-8 border-x-8 border-gray-600 rounded-t-lg flex flex-col relative overflow-hidden shadow-[0_-15px_40px_rgba(0,0,0,0.6)]">
+                            <div id="meteran-pln" onclick="cekMeteran()" class="absolute top-4 right-8 w-12 h-16 bg-gray-400 border-4 border-gray-500 rounded-md z-30 cursor-pointer shadow-lg flex flex-col items-center pt-1 hover:scale-110 transition-transform"><div class="w-8 h-4 bg-gray-900 font-tech text-[10px] text-green-400 flex justify-center items-center overflow-hidden" id="meteran-angka">ON</div><div id="meteran-lampu" class="w-3 h-3 bg-green-500 rounded-full mt-2 shadow-[0_0_5px_#22c55e]"></div><div id="icon-konslet" class="absolute -top-3 -right-3 text-2xl hidden animate-ping">⚡</div></div>
+                            <div class="absolute inset-0 opacity-10" style="background-image: repeating-linear-gradient(45deg, #4b5563 25%, transparent 25%, transparent 75%, #4b5563 75%, #4b5563), repeating-linear-gradient(45deg, #4b5563 25%, #1f2937 25%, #1f2937 75%, #4b5563 75%, #4b5563); background-position: 0 0, 10px 10px; background-size: 20px 20px;"></div>
+                            <div class="w-full h-6 bg-gradient-to-b from-blue-600 to-blue-800 border-b-4 border-blue-900 z-10 shadow-lg"></div>
+                            <div class="flex-grow flex items-end p-4 gap-4 z-10">
+                                <div id="jendela-kiri" class="hidden md:block flex-1 h-32 bg-cyan-900/40 border-4 border-gray-500 window-on relative flex items-center justify-center overflow-hidden transition-all duration-500"><div class="w-full h-1 bg-gray-500 absolute"></div><div class="h-full w-1 bg-gray-500 absolute"></div><div class="text-cyan-400/30 text-6xl">🖥️</div></div>
+                                <div id="pintu-warnet" class="w-32 md:w-40 h-40 border-t-4 border-gray-500 bg-cyan-900/60 window-on relative flex justify-center transition-all duration-500"><div class="absolute right-4 top-1/2 w-2 h-8 bg-gray-300 rounded"></div><div class="absolute -bottom-1 w-24 h-3 bg-gray-700 rounded-t-md"></div><div id="sign-pintu" class="text-red-400 font-bold mt-2 bg-gray-900/80 px-2 py-0.5 rounded text-xs border border-red-500 h-fit">TUTUP</div></div>
+                                <div id="jendela-kanan" class="flex-1 h-32 bg-cyan-900/40 border-4 border-gray-500 window-on relative flex items-center justify-center overflow-hidden transition-all duration-500"><div class="w-full h-1 bg-gray-500 absolute"></div><div class="h-full w-1 bg-gray-500 absolute"></div><div class="text-cyan-400/30 text-6xl">🎮</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HALAMAN PROFIL -->
+            <div id="halaman-profil" class="halaman-panel hidden">
+                <div class="max-w-3xl mx-auto">
+                    <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8 shadow-2xl">
+                        <div class="text-center mb-6"><div class="text-6xl mb-4">👤</div><h2 class="text-2xl font-bold text-blue-400">Profil Juragan</h2></div>
+                        <div id="profil-rank-card" class="bg-gray-900 rounded-xl p-6 border-2 border-yellow-600/50 mb-6"></div>
+                        <div class="bg-gray-900 rounded-xl p-5 border border-gray-700 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center"><div><p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nama Panggilan</p><p class="text-xl font-bold text-white" id="profil-nama-user">Juragan Warnet</p></div><button onclick="bukaPopupGantiNama('user')" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md transition-colors">✏️ Ganti (Rp 10.000)</button></div>
+                                <div class="flex justify-between items-center"><div><p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nama Warnet</p><p class="text-xl font-bold text-blue-400" id="profil-nama-warnet">WARNET KITA</p></div><button onclick="bukaPopupGantiNama('warnet')" class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md transition-colors">✏️ Ganti (Rp 50.000)</button></div>
+                            </div>
+                        </div>
+                        <div id="profil-riwayat-rank" class="bg-gray-900 rounded-xl p-5 border border-gray-700 mb-6"><h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">🔽 Riwayat Rank</h3><div class="space-y-2" id="riwayat-rank-container"></div></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="simpanManual()" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/50 transition-colors flex items-center justify-center gap-2"><span>💾</span> Simpan Progres</button>
+                            <button onclick="keluarKeSplash()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"><span>🚪</span> Keluar</button>
+                            <button onclick="bukaPopupReset()" class="col-span-2 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-900/50 transition-colors flex items-center justify-center gap-2"><span>🔄</span> Reset Toko</button>
+                        </div>
+                        <p class="text-[10px] text-gray-500 text-center mt-4">Progres disimpan otomatis setiap 30 detik</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POPUP GANTI NAMA -->
+            <div id="popup-ganti-nama" class="fixed inset-0 bg-black/80 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-600 max-w-md w-full shadow-2xl">
+                    <h3 id="popup-ganti-judul" class="text-lg font-bold mb-4 text-blue-400">Ganti Nama</h3>
+                    <input type="text" id="popup-ganti-input" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none mb-2">
+                    <p id="popup-ganti-info" class="text-xs text-gray-400 mb-4"></p>
+                    <div class="flex gap-3"><button onclick="tutupPopupGantiNama()" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg transition-colors">Batal</button><button onclick="prosesGantiNama()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg shadow-md transition-colors">Ganti</button></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATA STATE & VARIABEL GLOBAL
+        // ==========================================
+        let gameData = {
+            version: "2.1", namaWarnet: 'WARNET KITA', namaUser: 'Juragan Warnet',
+            statePemain: { uang: 1500000, level: 1, xp: 0, rating: 0.0, tokoBuka: false, tokenListrik: 1000, isBlackout: false, isKonslet: false },
+            inventori: [
+                { id: 'inv_a1', kategori: 'dasar', nama: 'Meja Kentang', hargaSewa: 1000, hargaBeli: 50000, isRusak: false, icon: '🪑' },
+                { id: 'inv_a2', kategori: 'experience', nama: 'TV Kentang', hargaSewa: 1500, hargaBeli: 150000, isRusak: false, icon: '🖥️' },
+                { id: 'inv_a3', kategori: 'core', nama: 'PC Kentang', hargaSewa: 2500, hargaBeli: 300000, isRusak: false, icon: '⚙️' }
+            ],
+            mejaRakit: { dasar: null, experience: null, core: null }, pcSiapPasang: [], daftarPC: [], daftarServis: [], daftarPaket: [],
+            slotWarnet: [{ id: 1, status: 'kosong', pcId: null }, { id: 2, status: 'kosong', pcId: null }, { id: 3, status: 'kosong', pcId: null }],
+            ruanganAktif: 'tengah',
+            dataRuangan: {
+                kiri: { nama: 'Ruang Kiri', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } },
+                tengah: { nama: 'Ruang Utama', status: 'aktif', areaDepan: { status: 'aktif', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } },
+                kanan: { nama: 'Ruang Kanan', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } }
+            },
+            menitInGame: 480
+        };
+
+        const HARGA_SLOT = 250000, HARGA_AREA = 750000;
+        let kabelColors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500'];
+        let leftNodes = [], rightNodes = [], selectedLeftNode = null, connectedWiresCount = 0;
+        let modalPaketTerbuka = false, pendingBeli = null, onConfirmAction = null;
+        let panelBottomTimer = null, isPanelBottomVisible = true;
+        let tipeGantiNama = 'user', autoSaveInterval = null, waktuAnimationInterval = null;
+
+        const CUSTOMER_TIERS = [
+            { name: "Bocil Kampung", icon: "👦", minRating: 0.0, minHours: 1, maxHours: 2, multiplier: 0.7, sabarMatiLampu: 16, desc: "Uang pas-pasan. Resiko merusak PC saat main." },
+            { name: "Pelajar SMA", icon: "🎒", minRating: 2.5, minHours: 2, maxHours: 4, multiplier: 0.9, sabarMatiLampu: 14, desc: "Aman, datang setelah sekolah." },
+            { name: "Mahasiswa", icon: "👨‍💻", minRating: 5.0, minHours: 3, maxHours: 5, multiplier: 1.1, sabarMatiLampu: 12, desc: "Berani bayar mahal untuk nugas semalaman." },
+            { name: "Pro Player Sultan", icon: "🤵", minRating: 8.0, minHours: 4, maxHours: 6, multiplier: 1.5, sabarMatiLampu: 10, desc: "Bayaran sultan, durasi panjang, paling menguntungkan!" }
+        ];
+
+        // XP Requirements
+        function getXPNeeded(l) { if (l <= 3) return 10; if (l <= 5) return 20; if (l <= 8) return 30; if (l <= 12) return 40; if (l <= 17) return 60; if (l <= 23) return 100; if (l <= 27) return 150; return 200; }
+        
+        // Rank System
+        function getRankInfo(l) { if (l <= 3) return { nama: 'PERINTIS', icon: '🥉', color: 'rank-perintis', bgColor: '#cd7f32', next: 'PEMBANGUN' }; if (l <= 10) return { nama: 'PEMBANGUN', icon: '🥈', color: 'rank-pembangun', bgColor: '#c0c0c0', next: 'EPIC WARNET' }; if (l <= 20) return { nama: 'EPIC WARNET', icon: '🥇', color: 'rank-epic', bgColor: '#ffd700', next: 'HERO WARNET' }; if (l <= 25) return { nama: 'HERO WARNET', icon: '💜', color: 'rank-hero', bgColor: '#9b59b6', next: 'LEGENDA WARNET' }; if (l <= 29) return { nama: 'LEGENDA WARNET', icon: '🔥', color: 'rank-legenda', bgColor: '#e74c3c', next: 'ULTIMATE GLORY' }; return { nama: 'ULTIMATE GLORY', icon: '👑', color: 'rank-ultimate', bgColor: 'gradient', next: null }; }
+
+        // ==========================================
+        // FUNGSI UTILITY
+        // ==========================================
+        function formatUang(a) { return "Rp " + a.toLocaleString('id-ID'); }
+        function formatJam(t) { let j = Math.floor(t / 60) % 24, m = Math.floor(t % 60); return `${String(j).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
+        function showToast(p, t = 'sukses') { const c = document.getElementById('toast-container'), d = document.createElement('div'); d.className = `${t === 'sukses' ? 'bg-blue-600 border-blue-400' : 'bg-red-600 border-red-400'} text-white px-4 py-2 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.5)] font-bold text-sm pointer-events-auto border z-50`; d.innerText = p; c.appendChild(d); setTimeout(() => d.remove(), 4000); }
+        function showConfirm(t, m, i, cb) { document.getElementById('confirm-title').innerText = t; document.getElementById('confirm-msg').innerHTML = m; document.getElementById('confirm-icon').innerText = i; onConfirmAction = cb; document.getElementById('modal-confirm').classList.remove('hidden'); }
+        function batalConfirm() { document.getElementById('modal-confirm').classList.add('hidden'); onConfirmAction = null; }
+        function prosesConfirm() { if(onConfirmAction) onConfirmAction(); batalConfirm(); }
+
+        // ==========================================
+        // INISIALISASI
+        // ==========================================
+        function initSlots() { gameData.slotWarnet = [{ id: 1, status: 'kosong', pcId: null }, { id: 2, status: 'kosong', pcId: null }, { id: 3, status: 'kosong', pcId: null }]; gameData.dataRuangan.tengah.areaDepan.slots = [{ status: 'terbuka', slotWarnetId: 1 }, { status: 'terbuka', slotWarnetId: 2 }, { status: 'terbuka', slotWarnetId: 3 }, { status: 'terkunci', slotWarnetId: null }, { status: 'terkunci', slotWarnetId: null }, { status: 'terkunci', slotWarnetId: null }]; gameData.dataRuangan.tengah.areaBelakang.slots = []; gameData.dataRuangan.kiri.areaDepan.slots = []; gameData.dataRuangan.kiri.areaBelakang.slots = []; gameData.dataRuangan.kanan.areaDepan.slots = []; gameData.dataRuangan.kanan.areaBelakang.slots = []; }
+        initSlots();
+
+        // ==========================================
+        // SPLASH SCREEN
+        // ==========================================
+        function cekSaveData() { const s = localStorage.getItem('warnet_save'); if(s) { document.getElementById('splash-btn-lanjutkan').classList.remove('hidden'); document.getElementById('splash-btn-mulai').classList.add('hidden'); } else { document.getElementById('splash-btn-mulai').classList.remove('hidden'); document.getElementById('splash-btn-lanjutkan').classList.add('hidden'); } }
+        function mulaiGameDariAwal() { document.getElementById('splash-screen').classList.add('hidden'); document.getElementById('popup-nama-awal').classList.remove('hidden'); document.getElementById('popup-nama-awal').classList.add('flex'); }
+        function konfirmasiNamaAwal() { const nw = document.getElementById('input-nama-warnet').value.trim() || 'WARNET KITA', nu = document.getElementById('input-nama-user').value.trim() || 'Juragan Warnet'; gameData.namaWarnet = nw; gameData.namaUser = nu; gameData.statePemain = { uang: 1500000, level: 1, xp: 0, rating: 0.0, tokoBuka: false, tokenListrik: 1000, isBlackout: false, isKonslet: false }; gameData.inventori = [{ id: 'inv_a1', kategori: 'dasar', nama: 'Meja Kentang', hargaSewa: 1000, hargaBeli: 50000, isRusak: false, icon: '🪑' }, { id: 'inv_a2', kategori: 'experience', nama: 'TV Kentang', hargaSewa: 1500, hargaBeli: 150000, isRusak: false, icon: '🖥️' }, { id: 'inv_a3', kategori: 'core', nama: 'PC Kentang', hargaSewa: 2500, hargaBeli: 300000, isRusak: false, icon: '⚙️' }]; gameData.mejaRakit = { dasar: null, experience: null, core: null }; gameData.pcSiapPasang = []; gameData.daftarPC = []; gameData.daftarServis = []; gameData.daftarPaket = []; gameData.menitInGame = 480; gameData.ruanganAktif = 'tengah'; gameData.dataRuangan = { kiri: { nama: 'Ruang Kiri', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } }, tengah: { nama: 'Ruang Utama', status: 'aktif', areaDepan: { status: 'aktif', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } }, kanan: { nama: 'Ruang Kanan', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } } }; initSlots(); mulaiGame(false); }
+        function lanjutkanGame() { const s = localStorage.getItem('warnet_save'); if(s) { try { const l = JSON.parse(s); gameData = l; if(!gameData.dataRuangan) { gameData.dataRuangan = { kiri: { nama: 'Ruang Kiri', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } }, tengah: { nama: 'Ruang Utama', status: 'aktif', areaDepan: { status: 'aktif', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } }, kanan: { nama: 'Ruang Kanan', status: 'terkunci', areaDepan: { status: 'terkunci', slots: [] }, areaBelakang: { status: 'terkunci', slots: [] } } }; } if(!gameData.version) gameData.version = "2.1"; mulaiGame(true); } catch(e) { showToast('Save data rusak', 'gagal'); mulaiGameDariAwal(); } } else { mulaiGameDariAwal(); } }
+        function mulaiGame(f) { document.getElementById('popup-nama-awal').classList.add('hidden'); document.getElementById('popup-nama-awal').classList.remove('flex'); document.getElementById('splash-screen').classList.add('hidden'); document.getElementById('game-container').classList.remove('hidden'); document.getElementById('game-container').classList.add('flex'); updateNamaUI(); renderHeader(); console.log('🎮 Game dimulai, rating awal:', gameData.statePemain.rating); pindahHalaman('komputer'); if(autoSaveInterval) clearInterval(autoSaveInterval); autoSaveInterval = setInterval(() => saveGame(), 30000); showToast(`Selamat datang, ${gameData.namaUser}!`, 'sukses'); }
+        function updateNamaUI() { document.getElementById('header-nama-warnet').innerText = gameData.namaWarnet; document.getElementById('header-nama-user').innerText = gameData.namaUser; document.getElementById('neon-warnet').innerText = gameData.namaWarnet; document.getElementById('profil-nama-user').innerText = gameData.namaUser; document.getElementById('profil-nama-warnet').innerText = gameData.namaWarnet; }
+
+        // ==========================================
+        // SAVE & LOAD
+        // ==========================================
+        function saveGame() { gameData.version = "2.1"; localStorage.setItem('warnet_save', JSON.stringify(gameData)); showToast('💾 Progres tersimpan!', 'sukses'); }
+        function simpanManual() { saveGame(); }
+        function keluarKeSplash() { saveGame(); document.getElementById('game-container').classList.add('hidden'); document.getElementById('game-container').classList.remove('flex'); document.getElementById('splash-screen').classList.remove('hidden'); cekSaveData(); if(autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; } }
+
+        // ==========================================
+        // POPUP GANTI NAMA
+        // ==========================================
+        function bukaPopupGantiNama(t) { tipeGantiNama = t; const p = document.getElementById('popup-ganti-nama'), j = document.getElementById('popup-ganti-judul'), i = document.getElementById('popup-ganti-input'), n = document.getElementById('popup-ganti-info'); if(t === 'user') { j.innerText = 'Ganti Nama Panggilan'; i.value = gameData.namaUser; i.maxLength = 20; n.innerText = 'Biaya: Rp 10.000 • Maksimal 20 karakter'; } else { j.innerText = 'Ganti Nama Warnet'; i.value = gameData.namaWarnet; i.maxLength = 25; n.innerText = 'Biaya: Rp 50.000 • Maksimal 25 karakter'; } p.classList.remove('hidden'); p.classList.add('flex'); i.focus(); i.select(); }
+        function tutupPopupGantiNama() { document.getElementById('popup-ganti-nama').classList.add('hidden'); document.getElementById('popup-ganti-nama').classList.remove('flex'); }
+        function prosesGantiNama() { const i = document.getElementById('popup-ganti-input'), nb = i.value.trim(); if(!nb) { showToast('Nama tidak boleh kosong!', 'gagal'); return; } const b = tipeGantiNama === 'user' ? 10000 : 50000; if(gameData.statePemain.uang < b) { showToast(`Uang tidak cukup! Butuh Rp ${b.toLocaleString('id-ID')}`, 'gagal'); return; } gameData.statePemain.uang -= b; if(tipeGantiNama === 'user') gameData.namaUser = nb; else gameData.namaWarnet = nb; updateNamaUI(); renderHeader(); tutupPopupGantiNama(); saveGame(); showToast(`Nama ${tipeGantiNama === 'user' ? 'panggilan' : 'warnet'} berhasil diganti!`, 'sukses'); }
+
+        // ==========================================
+        // POPUP RESET
+        // ==========================================
+        function bukaPopupReset() { document.getElementById('popup-reset-confirm').classList.remove('hidden'); document.getElementById('popup-reset-confirm').classList.add('flex'); document.getElementById('input-reset-confirm').value = ''; document.getElementById('input-reset-confirm').focus(); }
+        function tutupPopupReset() { document.getElementById('popup-reset-confirm').classList.add('hidden'); document.getElementById('popup-reset-confirm').classList.remove('flex'); }
+        function prosesReset() { const i = document.getElementById('input-reset-confirm'); if(i.value.trim() !== 'WARNETLIFE') { showToast('Konfirmasi salah!', 'gagal'); return; } localStorage.removeItem('warnet_save'); document.getElementById('popup-reset-confirm').classList.add('hidden'); document.getElementById('popup-reset-confirm').classList.remove('flex'); document.getElementById('game-container').classList.add('hidden'); document.getElementById('game-container').classList.remove('flex'); document.getElementById('splash-screen').classList.remove('hidden'); if(autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; } cekSaveData(); showToast('Toko berhasil direset!', 'sukses'); }
+
+        // ==========================================
+        // NAVIGASI
+        // ==========================================
+        function pindahHalaman(t) { document.querySelectorAll('.halaman-panel').forEach(p => { p.classList.add('hidden'); p.classList.remove('block', 'grid', 'flex'); }); document.querySelectorAll('.nav-tab').forEach(tb => tb.className = "nav-tab px-5 py-3 bg-gray-800 hover:bg-gray-700 border-b border-gray-700 text-gray-400 font-bold transition-colors whitespace-nowrap relative"); const tp = document.getElementById(`halaman-${t}`); if(tp) { tp.classList.remove('hidden'); if(t === 'rakit') tp.classList.add('grid'); else if(t === 'komputer') tp.classList.add('flex'); else tp.classList.add('block'); } document.getElementById(`tab-${t}`).className = "nav-tab px-5 py-3 bg-gray-900 border-t border-l border-r border-gray-700 rounded-t-lg font-bold text-blue-400 whitespace-nowrap relative"; if(t === 'komputer' && !document.getElementById('os-app-billing').classList.contains('hidden')) renderPelayanan(); if(t === 'rakit') renderRakitDanGudang(); if(t === 'warnet') renderWarnetLayout(); if(t === 'bangunan') { if(modalPaketTerbuka) renderModalPaket(); renderSemuaTokoLuar(); } if(t === 'profil') { updateNamaUI(); renderProfilRanked(); } }
+
+        // ==========================================
+        // RENDER HEADER & RANKED
+        // ==========================================
+        function renderHeader() { document.getElementById('ui-uang').innerText = formatUang(gameData.statePemain.uang); document.getElementById('ui-rating').innerText = `${gameData.statePemain.rating.toFixed(1)} / 10`; document.getElementById('ui-level').innerText = gameData.statePemain.level; const xpn = getXPNeeded(gameData.statePemain.level); document.getElementById('ui-xp-text').innerText = `${gameData.statePemain.xp}/${xpn} XP`; document.getElementById('ui-xp-bar').style.width = `${(gameData.statePemain.xp / xpn) * 100}%`; document.getElementById('ui-token').innerText = Math.floor(gameData.statePemain.tokenListrik); }
+        function renderProfilRanked() { const l = gameData.statePemain.level, xp = gameData.statePemain.xp, xpn = getXPNeeded(l), r = getRankInfo(l), rc = document.getElementById('profil-rank-card'), nr = r.next ? `⬆️ Next: ${r.next}` : '🏆 Rank Tertinggi!', pp = (xp / xpn) * 100; rc.innerHTML = `<div class="text-center"><div class="text-5xl mb-3">${r.icon}</div><h3 class="text-2xl font-black ${r.color} mb-1">${r.nama}</h3><p class="text-sm text-gray-400 mb-4">Level ${l}</p><div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mb-2"><div class="h-full rounded-full" style="width: ${pp}%; background-color: ${r.bgColor};"></div></div><p class="text-xs text-gray-400">${xp} / ${xpn} XP</p><p class="text-xs text-gray-500 mt-2">${nr}</p></div>`; const rv = document.getElementById('riwayat-rank-container'), ranks = [{ n: 'PERINTIS', i: '🥉', min: 1, max: 3 }, { n: 'PEMBANGUN', i: '🥈', min: 4, max: 10 }, { n: 'EPIC WARNET', i: '🥇', min: 11, max: 20 }, { n: 'HERO WARNET', i: '💜', min: 21, max: 25 }, { n: 'LEGENDA WARNET', i: '🔥', min: 26, max: 29 }, { n: 'ULTIMATE GLORY', i: '👑', min: 30, max: 30 }]; rv.innerHTML = ''; ranks.forEach(rk => { const tc = l >= rk.min; rv.innerHTML += `<div class="flex items-center gap-3 ${tc ? '' : 'opacity-50'}"><span class="text-xl">${tc ? '✅' : '⬜'}</span><span class="text-lg">${rk.i}</span><span class="text-sm ${tc ? 'text-white' : 'text-gray-500'}">${rk.n} (Level ${rk.min}${rk.max > rk.min ? `-${rk.max}` : ''})</span></div>`; }); }
+
+        // ==========================================
+        // OS MANAGEMENT
+        // ==========================================
+        function toggleToko() { gameData.statePemain.tokoBuka = !gameData.statePemain.tokoBuka; const b = document.getElementById('btn-status-toko'), s = document.getElementById('sign-pintu'), w = document.getElementById('pintu-warnet'); if(gameData.statePemain.tokoBuka) { b.innerText = "Toko BUKA"; b.className = "bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition-colors border-2 border-green-800 shadow-[0_0_15px_rgba(34,197,94,0.5)]"; s.innerText = "BUKA"; s.className = "text-green-400 font-bold mt-2 bg-gray-900/80 px-2 py-0.5 rounded text-xs border border-green-500 h-fit"; w.classList.remove('border-gray-500'); w.classList.add('border-green-500'); showToast("Warnet buka!"); } else { b.innerText = "Toko TUTUP"; b.className = "bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg transition-colors border-2 border-red-800 shadow-lg"; s.innerText = "TUTUP"; s.className = "text-red-400 font-bold mt-2 bg-gray-900/80 px-2 py-0.5 rounded text-xs border border-red-500 h-fit"; w.classList.remove('border-green-500'); w.classList.add('border-gray-500'); showToast("Warnet ditutup!", "gagal"); } }
+        function bukaAppOS(a) { ['billing', 'toko', 'rating', 'mylamp', 'expan'].forEach(id => { const e = document.getElementById(`os-app-${id}`); if(e) { e.classList.add('hidden'); e.classList.remove('flex'); } }); const t = document.getElementById(`os-app-${a}`); if(t) { t.classList.remove('hidden'); t.classList.add('flex'); } const apps = { 'billing': {n: "Billing's", c: "bg-blue-500"}, 'toko': {n: "NetShop", c: "bg-purple-500"}, 'rating': {n: "RateThings", c: "bg-yellow-500"}, 'mylamp': {n: "MyLamp", c: "bg-teal-500"}, 'expan': {n: "ExPan", c: "bg-orange-500"} }; document.getElementById('os-active-apps').innerHTML = `<div class="${apps[a].c} text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-md flex items-center h-full">${apps[a].n}</div>`; if(a === 'billing') renderPelayanan(); if(a === 'rating') renderAppRating(); if(a === 'mylamp') document.getElementById('app-token-display').innerText = Math.floor(gameData.statePemain.tokenListrik); if(a === 'expan') renderExPan(); }
+        function tutupAppOS(a) { const e = document.getElementById(`os-app-${a}`); if(e) { e.classList.add('hidden'); e.classList.remove('flex'); } document.getElementById('os-active-apps').innerHTML = ""; }
+        function matikanKomputer() { ['billing', 'toko', 'rating', 'mylamp', 'expan'].forEach(id => tutupAppOS(id)); pindahHalaman('bangunan'); showToast("Komputer OP dimatikan.", "sukses"); }
+
+        // ==========================================
+        // SISTEM RATING & LEVEL (DIPERBAIKI)
+        // ==========================================
+        function tambahXP() { const ol = gameData.statePemain.level, or = getRankInfo(ol).nama; gameData.statePemain.xp += 1; gameData.statePemain.rating += 0.1; gameData.statePemain.rating = Math.round(gameData.statePemain.rating * 10) / 10; if(gameData.statePemain.rating > 10.0) gameData.statePemain.rating = 10.0; console.log('📊 Rating bertambah menjadi:', gameData.statePemain.rating); const xpn = getXPNeeded(gameData.statePemain.level); if(gameData.statePemain.xp >= xpn) { gameData.statePemain.xp = 0; gameData.statePemain.level += 1; showToast(`🎉 Level Up! Sekarang Level ${gameData.statePemain.level}`, "sukses"); const nr = getRankInfo(gameData.statePemain.level).nama; if(nr !== or) { showToast(`🏆 RANK UP! ${or} → ${nr} 🏆`, "sukses"); } } renderHeader(); if(!document.getElementById('os-app-rating').classList.contains('hidden')) renderAppRating(); }
+        function kurangiRating(j, a) { gameData.statePemain.rating -= j; gameData.statePemain.rating = Math.round(gameData.statePemain.rating * 10) / 10; if(gameData.statePemain.rating < 0) gameData.statePemain.rating = 0.0; console.log('📉 Rating berkurang menjadi:', gameData.statePemain.rating); showToast(`⭐ Rating Turun (-${j}): ${a}`, "gagal"); renderHeader(); if(!document.getElementById('os-app-rating').classList.contains('hidden')) renderAppRating(); }
+        function renderAppRating() { let r = gameData.statePemain.rating; const fs = Math.floor(r), hasHalf = (r - fs) >= 0.5, es = 10 - fs - (hasHalf ? 1 : 0); let starsHTML = '★'.repeat(fs); if(hasHalf) starsHTML += '½'; starsHTML += '☆'.repeat(es); let ht = CUSTOMER_TIERS.map(t => { let u = r >= t.minRating, bg = u ? "bg-gray-800 border-yellow-500/50" : "bg-gray-800/50 border-gray-700 opacity-60 grayscale", ls = u ? `<span class="text-green-400 text-xs font-bold">Terbuka</span>` : `<span class="text-red-400 text-xs font-bold">🔒 Butuh ⭐${t.minRating.toFixed(1)}</span>`; return `<div class="flex items-center gap-4 p-3 rounded-xl border ${bg}"><div class="text-4xl w-12 text-center">${t.icon}</div><div class="flex-grow"><div class="flex justify-between items-center mb-1"><h4 class="font-bold text-sm text-gray-200">${t.name}</h4>${ls}</div><p class="text-xs text-gray-400">${t.desc}</p></div></div>`; }).join(''); document.getElementById('app-rating-content').innerHTML = `<div class="text-center mb-8 mt-2"><h2 class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Total Reputasi Warnet</h2><p class="text-5xl font-black text-yellow-400 font-tech">${r.toFixed(1)} <span class="text-2xl text-gray-500">/ 10.0</span></p><div class="mt-4 text-3xl tracking-widest text-yellow-400">${starsHTML}</div><p class="text-xs text-gray-500 mt-3">+0.1 per Pelanggan | Penalti jika pelayanan buruk</p></div><div class="space-y-3"><h3 class="font-bold text-gray-300 border-b border-gray-700 pb-2 mb-4 font-tech tracking-widest">▶ TIPE PELANGGAN</h3>${ht}</div>`; console.log('📱 Render RateThings, rating:', r, 'stars:', starsHTML); }
+
+        // ==========================================
+        // NETSHOP & EKSPEDISI
+        // ==========================================
+        function siapkanBeli(q, n, k, i, hs, hb, wk) { let qi = document.getElementById(q), qty = parseInt(qi.value); if(isNaN(qty) || qty < 1) { showToast("Jumlah tidak valid!", "gagal"); return; } let th = hb * qty; if(gameData.statePemain.uang < th) { showToast("Uang tidak cukup!", "gagal"); return; } showConfirm("Beli Komponen", `Beli <b class="text-blue-400">${qty}x ${n}</b> seharga <b class="text-green-400">${formatUang(th)}</b>?`, "🛒", () => { gameData.statePemain.uang -= th; for(let x=0; x<qty; x++) { gameData.daftarPaket.push({ id: 'pkt_' + Date.now() + '_' + x, nama: n, kategori: k, icon: i, hargaSewa: hs, hargaBeli: hb, isRusak: false, waktuTiba: Date.now() + (wk * 1000), status: 'dikirim' }); } qi.value = 1; showToast(`Sukses memesan ${qty}x ${n}!`); renderHeader(); }); }
+        function bukaModalPaket() { modalPaketTerbuka = true; document.getElementById('modal-paket-backdrop').classList.remove('hidden'); renderModalPaket(); }
+        function tutupModalPaket() { modalPaketTerbuka = false; document.getElementById('modal-paket-backdrop').classList.add('hidden'); }
+        function ambilSemuaPaket() { let sisa = [], c = 0; gameData.daftarPaket.forEach(p => { if(p.status === 'siap') { gameData.inventori.push({ id: 'inv_' + Date.now() + Math.random(), kategori: p.kategori, nama: p.nama, hargaSewa: p.hargaSewa, hargaBeli: p.hargaBeli, isRusak: false, icon: p.icon }); c++; } else sisa.push(p); }); if(c > 0) { gameData.daftarPaket = sisa; renderModalPaket(); if(document.getElementById('halaman-rakit').classList.contains('grid')) renderRakitDanGudang(); cekNotifikasiPaket(); showToast(`${c} Paket berhasil diambil!`); } }
+        function cekNotifikasiPaket() { let a = gameData.daftarPaket.some(p => p.status === 'siap'); document.getElementById('notif-paket-tab').classList.toggle('hidden', !a); document.getElementById('notif-paket-building').classList.toggle('hidden', !a); }
+        function ambilPaket(id) { let i = gameData.daftarPaket.findIndex(p => p.id === id); if(i !== -1 && gameData.daftarPaket[i].status === 'siap') { let p = gameData.daftarPaket.splice(i, 1)[0]; gameData.inventori.push({ id: 'inv_' + Date.now() + Math.random(), kategori: p.kategori, nama: p.nama, hargaSewa: p.hargaSewa, hargaBeli: p.hargaBeli, isRusak: false, icon: p.icon }); renderModalPaket(); cekNotifikasiPaket(); if(document.getElementById('halaman-rakit').classList.contains('grid')) renderRakitDanGudang(); showToast(`${p.nama} diambil!`); } }
+        function renderModalPaket() { const c = document.getElementById('list-paket-container'); if(!c) return; c.innerHTML = ""; let w = Date.now(); if(gameData.daftarPaket.length === 0) { c.innerHTML = `<p class="text-sm text-gray-500 text-center italic py-4">Belum ada pesanan.</p>`; return; } gameData.daftarPaket.forEach(p => { if(p.status === 'dikirim') { let s = Math.ceil((p.waktuTiba - w) / 1000); c.innerHTML += `<div class="bg-gray-700 border border-gray-600 p-3 rounded-lg flex justify-between items-center opacity-75"><div><h4 class="font-bold text-sm text-gray-300">${p.nama}</h4></div><span class="text-xs font-mono bg-gray-900 px-2 py-1 rounded text-blue-400">${s}s</span></div>`; } else if(p.status === 'siap') { c.innerHTML += `<div class="bg-green-900/30 border border-green-600 p-3 rounded-lg flex justify-between items-center shadow-md"><div><h4 class="font-bold text-sm text-green-400">${p.nama}</h4></div><button onclick="ambilPaket('${p.id}')" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-2 rounded">Ambil</button></div>`; } }); }
+
+        // ==========================================
+        // RAKIT & GUDANG
+        // ==========================================
+        function getNextNomorBilik() { let n = [], e = (nm) => { let m = nm.match(/\d+/); return m ? parseInt(m[0]) : 0; }; gameData.pcSiapPasang.forEach(p => n.push(e(p.nama))); gameData.daftarPC.forEach(p => n.push(e(p.nama))); let num = 1; while(n.includes(num)) num++; return num; }
+        function pasangKomponen(id) { let idx = gameData.inventori.findIndex(b => b.id === id); if(idx !== -1) { let b = gameData.inventori[idx]; if(b.isRusak) { showToast("Barang RUSAK!", "gagal"); return; } if(gameData.mejaRakit[b.kategori] !== null) gameData.inventori.push(gameData.mejaRakit[b.kategori]); gameData.mejaRakit[b.kategori] = b; gameData.inventori.splice(idx, 1); renderRakitDanGudang(); } }
+        function lepasKomponen(k) { if(gameData.mejaRakit[k] !== null) { gameData.inventori.push(gameData.mejaRakit[k]); gameData.mejaRakit[k] = null; renderRakitDanGudang(); } }
+        function selesaikanRakitan() { if(gameData.mejaRakit.dasar && gameData.mejaRakit.experience && gameData.mejaRakit.core) { let hpj = gameData.mejaRakit.dasar.hargaSewa + gameData.mejaRakit.experience.hargaSewa + gameData.mejaRakit.core.hargaSewa, no = getNextNomorBilik(); let pc = { id: Date.now(), nama: "Bilik " + String(no).padStart(2, '0'), tipe: "Rakitan", hargaPerJam: hpj, status: 'kosong', sisaWaktuJam: 0, totalWaktuJam: 0, hargaDeal: 0, tawaranWaktuJam: 0, tawaranHarga: 0, waktuTungguNego: 0, waktuTungguBayar: 0, pelangganIcon: "👦", komponenOri: { dasar: gameData.mejaRakit.dasar, experience: gameData.mejaRakit.experience, core: gameData.mejaRakit.core } }; gameData.pcSiapPasang.push(pc); gameData.mejaRakit = { dasar: null, experience: null, core: null }; renderRakitDanGudang(); pindahHalaman('warnet'); showToast(`Bilik ${String(no).padStart(2, '0')} Berhasil Dirakit!`); } }
+        function bongkarPC(id) { let idx = gameData.pcSiapPasang.findIndex(p => p.id === id); if(idx !== -1) { let pc = gameData.pcSiapPasang.splice(idx, 1)[0]; if(pc.komponenOri) { if(pc.status === 'rusak') { let parts = ['dasar', 'experience', 'core'], bp = parts[Math.floor(Math.random() * parts.length)]; pc.komponenOri[bp].isRusak = true; showToast(`Bongkar Selesai! ${pc.komponenOri[bp].nama} RUSAK!`, "gagal"); } else { showToast(`${pc.nama} berhasil dibongkar!`, "sukses"); } gameData.inventori.push(pc.komponenOri.dasar, pc.komponenOri.experience, pc.komponenOri.core); } renderRakitDanGudang(); if(document.getElementById('halaman-warnet').classList.contains('block')) renderWarnetLayout(); renderSemuaTokoLuar(); } }
+        function renderRakitDanGudang() { const cg = document.getElementById('inventori-container'); if(!cg) return; cg.innerHTML = ""; if(gameData.inventori.length === 0) cg.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Gudang kosong.</p>`; else { gameData.inventori.forEach(item => { let lk = item.kategori === 'dasar' ? 'Meja dan Kursi' : item.kategori === 'experience' ? 'TV Keyboard Mouse' : 'PC', bt = item.isRusak ? `<span class="bg-red-600 text-white text-[10px] px-1 rounded ml-2">RUSAK</span>` : "", bg = item.isRusak ? "border-red-600 bg-red-950/30" : "border-gray-600 bg-gray-900", bp = item.isRusak ? `<button class="bg-gray-600 text-gray-400 text-xs font-bold px-3 py-2 rounded cursor-not-allowed">Rusak</button>` : `<button onclick="pasangKomponen('${item.id}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded shadow-md">Pasang</button>`; cg.innerHTML += `<div class="${bg} border p-3 rounded-lg flex justify-between items-center shadow-sm"><div class="flex items-center gap-3"><span class="text-3xl ${item.isRusak?'grayscale opacity-50':''}">${item.icon}</span><div><h4 class="font-bold text-sm text-gray-200">${item.nama} ${bt}</h4><p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">${lk}</p></div></div>${bp}</div>`; }); } ['dasar', 'experience', 'core'].forEach((k, idx) => { let ns = ['Meja dan Kursi', 'TV Keyboard Mouse', 'PC'][idx], ib = ['🪑', '🖥️', '⚙️'][idx], el = document.getElementById(`rakit-${k}`); if(!el) return; let it = gameData.mejaRakit[k]; if(it) el.innerHTML = `<div class="bg-gray-900 border-2 border-blue-500 rounded-xl p-4 flex items-center justify-between bg-blue-900/10 shadow-inner"><div class="flex items-center gap-3"><span class="text-2xl">${it.icon}</span><div><p class="text-[10px] text-blue-400 font-bold uppercase">Slot ${ns}</p><p class="text-sm font-bold">${it.nama}</p></div></div><button onclick="lepasKomponen('${k}')" class="text-xs text-red-400 hover:text-red-300 font-bold underline">Lepas</button></div>`; else el.innerHTML = `<div class="bg-gray-900 border-2 border-dashed border-gray-600 rounded-xl p-4 flex items-center justify-between opacity-70"><div><p class="text-[10px] text-gray-500 font-bold uppercase">Slot ${ns}</p><p class="text-sm text-red-400 italic">Belum terpasang</p></div><div class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center opacity-50 text-xl">${ib}</div></div>`; }); const bs = document.getElementById('btn-selesai-rakit'); if(bs) { if(gameData.mejaRakit.dasar && gameData.mejaRakit.experience && gameData.mejaRakit.core) { bs.disabled = false; bs.className = "w-full mt-4 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-900/50 transition-colors animate-pulse"; bs.innerText = "Selesaikan Rakitan PC!"; } else { bs.disabled = true; bs.className = "w-full mt-4 bg-gray-700 text-gray-500 py-3 rounded-lg font-bold cursor-not-allowed transition-colors"; bs.innerText = "Komponen Belum Lengkap"; } } const lb = document.getElementById('list-pc-bongkar'); if(!lb) return; lb.innerHTML = ""; if(gameData.pcSiapPasang.length === 0) lb.innerHTML = `<p class="text-xs text-gray-500 italic">Tidak ada PC siap bongkar.</p>`; else { gameData.pcSiapPasang.forEach(pc => { let ib = pc.status === 'rusak', t = ib ? `<span class="bg-red-600 text-white text-[10px] px-1 rounded ml-2">RUSAK</span>` : "", bg = ib ? "bg-red-950/30 border-red-800" : "bg-gray-900 border-gray-700"; lb.innerHTML += `<div class="${bg} p-3 rounded-lg flex justify-between items-center border"><div><span class="font-bold text-sm text-blue-400">🖥️ ${pc.nama} ${t}</span></div><button onclick="bongkarPC(${pc.id})" class="text-xs bg-red-900/50 hover:bg-red-600 text-red-300 hover:text-white px-2 py-1 rounded border border-red-800 transition-colors shadow-md">🔨 Bongkar</button></div>`; }); } }
+
+        // ==========================================
+        // BWKAS SELL & SERFICE INHIR
+        // ==========================================
+        function bukaModalBwkas() { document.getElementById('modal-bwkas-backdrop').classList.remove('hidden'); renderModalBwkas(); }
+        function tutupModalBwkas() { document.getElementById('modal-bwkas-backdrop').classList.add('hidden'); }
+        function renderModalBwkas() { const c = document.getElementById('list-bwkas-container'); c.innerHTML = ""; if(gameData.inventori.length === 0) { c.innerHTML = `<p class="text-sm text-amber-500/50 text-center italic mt-4">Gudangmu kosong, bro.</p>`; return; } gameData.inventori.forEach(item => { let ht = item.isRusak ? Math.floor(item.hargaBeli * 0.15) : Math.floor(item.hargaBeli * 0.6), rt = item.isRusak ? `<span class="bg-red-600 text-white text-[10px] px-1 rounded ml-2">RUSAK</span>` : ""; c.innerHTML += `<div class="bg-amber-950/50 border border-amber-700 p-3 rounded-lg flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">${item.icon}</span><div><h4 class="font-bold text-sm text-amber-100">${item.nama} ${rt}</h4><p class="text-xs text-green-400 font-bold">Nawar: ${formatUang(ht)}</p></div></div><button onclick="jualKeBwkas('${item.id}')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-2 rounded shadow-md">Jual</button></div>`; }); }
+        function jualKeBwkas(id) { let it = gameData.inventori.find(i => i.id === id); if(!it) return; let ht = it.isRusak ? Math.floor(it.hargaBeli * 0.15) : Math.floor(it.hargaBeli * 0.6); showConfirm("Jual Barang", `Bang BwKas nawar <b>${it.nama}</b> seharga <b class="text-green-400">${formatUang(ht)}</b>. Lepas?`, "🤝", () => { gameData.inventori = gameData.inventori.filter(i => i.id !== id); gameData.statePemain.uang += ht; showToast(`Barang laku! Dapat ${formatUang(ht)}`, "sukses"); renderHeader(); renderModalBwkas(); if(document.getElementById('halaman-rakit').classList.contains('grid')) renderRakitDanGudang(); }); }
+        function bukaModalSerfice() { document.getElementById('modal-serfice-backdrop').classList.remove('hidden'); renderModalSerfice(); }
+        function tutupModalSerfice() { document.getElementById('modal-serfice-backdrop').classList.add('hidden'); }
+        function renderModalSerfice() { const ca = document.getElementById('list-servis-aktif'); ca.innerHTML = ""; let w = Date.now(); if(gameData.daftarServis.length === 0) ca.innerHTML = `<p class="text-xs text-slate-500 italic">Lagi nganggur.</p>`; else { gameData.daftarServis.forEach(item => { let s = Math.ceil((item.waktuSelesai - w) / 1000); ca.innerHTML += `<div class="bg-slate-900 border border-slate-700 p-2 rounded flex justify-between items-center"><span class="text-xs text-slate-300">🔧 ${item.nama}</span><span class="text-xs font-tech text-yellow-400">${s}s</span></div>`; }); } const c = document.getElementById('list-serfice-container'); c.innerHTML = ""; let br = gameData.inventori.filter(i => i.isRusak); if(br.length === 0) { c.innerHTML = `<p class="text-sm text-slate-500/50 text-center italic mt-4">Gak ada barang rusak.</p>`; return; } br.forEach(item => { let bs = Math.floor(item.hargaBeli * 0.35); c.innerHTML += `<div class="bg-slate-900 border border-slate-600 p-3 rounded-lg flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-2xl">${item.icon}</span><div><h4 class="font-bold text-sm text-slate-200">${item.nama} <span class="bg-red-600 text-white text-[10px] px-1 rounded ml-1">RUSAK</span></h4><p class="text-xs text-red-400 font-bold">Biaya: ${formatUang(bs)}</p></div></div><button onclick="servisKeInhir('${item.id}')" class="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-2 rounded shadow-md">Servis</button></div>`; }); }
+        function servisKeInhir(id) { let it = gameData.inventori.find(i => i.id === id); if(!it) return; let bs = Math.floor(it.hargaBeli * 0.35); if(gameData.statePemain.uang < bs) { showToast("Uang tidak cukup!", "gagal"); return; } showConfirm("Servis Barang", `Mang Inhir minta <b class="text-red-400">${formatUang(bs)}</b> untuk servis <b>${it.nama}</b>. Setuju?`, "🔧", () => { gameData.statePemain.uang -= bs; gameData.inventori = gameData.inventori.filter(i => i.id !== id); it.waktuSelesai = Date.now() + 20000; gameData.daftarServis.push(it); showToast(`${it.nama} masuk antrean servis!`, "sukses"); renderHeader(); renderModalSerfice(); if(document.getElementById('halaman-rakit').classList.contains('grid')) renderRakitDanGudang(); }); }
+        function renderSemuaTokoLuar() { if(!document.getElementById('modal-bwkas-backdrop').classList.contains('hidden')) renderModalBwkas(); if(!document.getElementById('modal-serfice-backdrop').classList.contains('hidden')) renderModalSerfice(); }
+
+        // ==========================================
+        // KELISTRIKAN & MINIGAME
+        // ==========================================
+        function beliToken(j, h) { showConfirm("Beli Token", `Beli <b class="text-teal-400">${j} Token</b> seharga <b class="text-green-400">${formatUang(h)}</b>?`, "⚡", () => { if(gameData.statePemain.uang >= h) { gameData.statePemain.uang -= h; gameData.statePemain.tokenListrik += j; showToast(`Berhasil isi Token!`, "sukses"); if(gameData.statePemain.isBlackout && !gameData.statePemain.isKonslet && gameData.statePemain.tokenListrik > 0) pulihkanListrik(); renderHeader(); if(!document.getElementById('os-app-mylamp').classList.contains('hidden')) document.getElementById('app-token-display').innerText = Math.floor(gameData.statePemain.tokenListrik); } else showToast("Uang tidak cukup!", "gagal"); }); }
+        function triggerBlackout(k) { if(gameData.statePemain.isBlackout) return; gameData.statePemain.isBlackout = true; if(k) gameData.statePemain.isKonslet = true; showToast(k ? "💥 KONSLET! Cek meteran!" : "🌑 MATI LAMPU! Beli token!", "gagal"); gameData.daftarPC.forEach(pc => { if(pc.status === "jalan" || pc.status === "menunggu") { let t = CUSTOMER_TIERS.find(t => t.icon === pc.pelangganIcon); pc.sisaSabarMatiLampu = t ? t.sabarMatiLampu : 15; } }); renderEfekVisualListrik(); if(!document.getElementById('os-app-billing').classList.contains('hidden')) renderPelayanan(); }
+        function pulihkanListrik() { gameData.statePemain.isBlackout = false; gameData.statePemain.isKonslet = false; showToast("💡 LISTRIK MENYALA!", "sukses"); gameData.daftarPC.forEach(pc => delete pc.sisaSabarMatiLampu); renderEfekVisualListrik(); if(!document.getElementById('os-app-billing').classList.contains('hidden')) renderPelayanan(); }
+        function renderEfekVisualListrik() { const n = document.getElementById('neon-warnet'), jk = document.getElementById('jendela-kiri'), jn = document.getElementById('jendela-kanan'), p = document.getElementById('pintu-warnet'), ml = document.getElementById('meteran-lampu'), ma = document.getElementById('meteran-angka'), ik = document.getElementById('icon-konslet'), ol = document.getElementById('overlay-mati-lampu-luar'); let hf = (gameData.menitInGame / 60) % 24, isN = (hf > 17 || hf <= 6); if(gameData.statePemain.isBlackout) { if(n) n.classList.replace('neon-on', 'neon-off'); [jk, jn, p].forEach(el => { if(el) { el.classList.remove('window-on'); el.classList.add('window-off'); } }); if(ml) ml.className = "w-3 h-3 bg-red-600 rounded-full mt-2"; if(ma) { ma.innerText = "OFF"; ma.className = "w-8 h-4 bg-gray-900 font-tech text-[10px] text-red-600 flex justify-center items-center"; } document.getElementById('overlay-mati-lampu')?.classList.remove('hidden'); if(ol) ol.classList.remove('hidden'); if(ik && gameData.statePemain.isKonslet) ik.classList.remove('hidden'); } else { if(isN) { if(n) n.classList.replace('neon-off', 'neon-on'); [jk, jn, p].forEach(el => { if(el) { el.classList.add('window-on'); el.classList.remove('window-off'); } }); } else { if(n) n.classList.replace('neon-on', 'neon-off'); [jk, jn, p].forEach(el => { if(el) { el.classList.remove('window-on'); el.classList.add('window-off'); } }); } if(ml) ml.className = "w-3 h-3 bg-green-500 rounded-full mt-2 shadow-[0_0_5px_#22c55e]"; if(ma) { ma.innerText = "ON"; ma.className = "w-8 h-4 bg-gray-900 font-tech text-[10px] text-green-400 flex justify-center items-center"; } if(ik) ik.classList.add('hidden'); document.getElementById('overlay-mati-lampu')?.classList.add('hidden'); if(ol) ol.classList.add('hidden'); } }
+        function cekMeteran() { if(gameData.statePemain.isKonslet) mulaiMinigameKabel(); else showToast(gameData.statePemain.isBlackout ? "Token habis!" : "Meteran aman.", "sukses"); }
+        function mulaiMinigameKabel() { document.getElementById('modal-kabel').classList.remove('hidden'); leftNodes = [...kabelColors].sort(() => Math.random() - 0.5); rightNodes = [...kabelColors].sort(() => Math.random() - 0.5); selectedLeftNode = null; connectedWiresCount = 0; renderKabelNode(); }
+        function renderKabelNode() { const wk = document.getElementById('kabel-kiri'), wn = document.getElementById('kabel-kanan'); if(!wk || !wn) return; wk.innerHTML = ""; wn.innerHTML = ""; leftNodes.forEach(c => { let s = selectedLeftNode === c ? "wire-selected" : "", cn = c.includes('connected') ? "wire-connected" : "", bc = c.replace('-connected', ''); wk.innerHTML += `<div class="flex items-center gap-2"><div onclick="pilihKabelKiri('${bc}')" class="wire-node ${bc} ${s} ${cn}"></div><div class="h-1 w-8 ${cn ? bc : 'bg-gray-700'} rounded"></div></div>`; }); rightNodes.forEach(c => { let cn = c.includes('connected') ? "wire-connected" : "", bc = c.replace('-connected', ''); wn.innerHTML += `<div class="flex items-center gap-2"><div class="h-1 w-8 ${cn ? bc : 'bg-gray-700'} rounded"></div><div onclick="sambungKabelKanan('${bc}')" class="wire-node ${bc} ${cn}"></div></div>`; }); }
+        function pilihKabelKiri(c) { if(c.includes('connected')) return; selectedLeftNode = c; renderKabelNode(); }
+        function sambungKabelKanan(c) { if(!selectedLeftNode || c.includes('connected')) return; if(selectedLeftNode === c) { leftNodes[leftNodes.findIndex(x => x === c)] += "-connected"; rightNodes[rightNodes.findIndex(x => x === c)] += "-connected"; connectedWiresCount++; selectedLeftNode = null; if(connectedWiresCount === 4) setTimeout(() => { document.getElementById('modal-kabel').classList.add('hidden'); pulihkanListrik(); }, 500); else renderKabelNode(); } else { selectedLeftNode = null; renderKabelNode(); } }
+
+        // ==========================================
+        // EXPAN APP
+        // ==========================================
+        function renderExPan() { updateExPanTabs(); renderExPanGrids(); updateExPanInfo(); }
+        function pilihRuanganExpan(r) { if(r === 'tengah') gameData.ruanganAktif = 'tengah'; else if(r === 'kiri') { if(gameData.dataRuangan.kiri.status === 'terkunci') { cobaBeliRuangan('kiri'); return; } gameData.ruanganAktif = 'kiri'; } else if(r === 'kanan') { if(gameData.dataRuangan.kanan.status === 'terkunci') { cobaBeliRuangan('kanan'); return; } gameData.ruanganAktif = 'kanan'; } renderExPan(); }
+        function cobaBeliRuangan(r) { const bt = gameData.dataRuangan.tengah.areaBelakang; if(bt.status !== 'aktif') { showToast("🔒 Area Belakang Ruang Utama harus dibeli dulu!", "gagal"); return; } const st = bt.slots.filter(s => s.status === 'terbuka').length; if(st < 2) { showToast(`🔒 Minimal beli 2 slot di Area Belakang dulu! (Baru ${st}/2)`, "gagal"); return; } if(gameData.statePemain.uang < HARGA_AREA) { showToast(`Uang tidak cukup!`, "gagal"); return; } showConfirm("Buka Ruangan", `Buka <b>${gameData.dataRuangan[r].nama}</b> seharga <b class="text-green-400">${formatUang(HARGA_AREA)}</b>?`, "🏗️", () => { gameData.statePemain.uang -= HARGA_AREA; gameData.dataRuangan[r].status = 'aktif'; gameData.dataRuangan[r].areaDepan.status = 'aktif'; gameData.dataRuangan[r].areaDepan.slots = []; for(let i=0; i<6; i++) gameData.dataRuangan[r].areaDepan.slots.push({ status: 'terkunci', slotWarnetId: null }); renderHeader(); gameData.ruanganAktif = r; renderExPan(); showToast(`${gameData.dataRuangan[r].nama} berhasil dibuka!`, "sukses"); }); }
+        function updateExPanTabs() { const tk = document.getElementById('expan-tab-kiri'), tt = document.getElementById('expan-tab-tengah'), tn = document.getElementById('expan-tab-kanan'); [tk, tt, tn].forEach(t => t.className = 'tab-ruangan tab-ruangan-terkunci px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2'); if(gameData.ruanganAktif === 'kiri') tk.className = 'tab-ruangan tab-ruangan-aktif px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2'; else if(gameData.ruanganAktif === 'tengah') tt.className = 'tab-ruangan tab-ruangan-aktif px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2'; else if(gameData.ruanganAktif === 'kanan') tn.className = 'tab-ruangan tab-ruangan-aktif px-6 py-2 rounded-t-lg border-2 border-b-0 font-bold text-sm flex items-center gap-2'; tk.innerHTML = `<span>${gameData.dataRuangan.kiri.status === 'aktif' ? '←' : '🔒'}</span> Ruang Kiri`; tt.innerHTML = `<span>🏠</span> Ruang Utama`; tn.innerHTML = `<span>${gameData.dataRuangan.kanan.status === 'aktif' ? '→' : '🔒'}</span> Ruang Kanan`; }
+        function renderExPanGrids() { const r = gameData.dataRuangan[gameData.ruanganAktif]; if(!r) return; const gd = document.getElementById('expan-grid-depan'), gb = document.getElementById('expan-grid-belakang'), ab = document.getElementById('expan-area-belakang'), bb = document.getElementById('expan-badge-belakang'), ib = document.getElementById('expan-icon-belakang'), btn = document.getElementById('expan-btn-beli-belakang'); if(r.areaBelakang.status === 'aktif') { ab.classList.remove('area-terkunci-overlay'); ab.classList.add('bg-gray-900'); ib.innerText = '✅'; bb.innerHTML = 'AKTIF'; bb.className = 'bg-green-600 text-white text-[10px] px-2 py-0.5 rounded'; btn.disabled = true; btn.innerText = 'Area Sudah Dibuka'; } else { ab.classList.add('area-terkunci-overlay'); ab.classList.remove('bg-gray-900'); ib.innerText = '🔒'; bb.innerHTML = 'TERKUNCI'; bb.className = 'bg-gray-700 text-gray-300 text-[10px] px-2 py-0.5 rounded'; if(gameData.ruanganAktif === 'tengah') { const sd = r.areaDepan.slots.filter(s => s.status === 'terbuka').length, bisa = sd >= 4 && gameData.statePemain.uang >= HARGA_AREA; btn.disabled = !bisa; btn.innerText = sd < 4 ? `Butuh 4 slot (${sd}/4)` : `Buka Area (Rp 750.000)`; } else { btn.disabled = true; btn.innerText = 'Buka Area Depan dulu'; } } gd.innerHTML = ''; if(r.areaDepan.slots.length > 0) r.areaDepan.slots.forEach((s, i) => gd.appendChild(createSlotElement(s, i, 'depan'))); gb.innerHTML = ''; if(r.areaBelakang.status === 'aktif' && r.areaBelakang.slots.length > 0) { r.areaBelakang.slots.forEach((s, i) => gb.appendChild(createSlotElement(s, i, 'belakang'))); } else { for(let i=0; i<6; i++) { const d = document.createElement('div'); d.className = 'expan-slot border-2 border-gray-600 rounded-lg p-2 flex flex-col items-center justify-center opacity-50'; d.innerHTML = `<div class="text-2xl mb-1">🔒</div><p class="text-[10px] text-gray-400">???</p>`; gb.appendChild(d); } } }
+        function createSlotElement(s, i, a) { const d = document.createElement('div'), isT = s.status === 'terkunci', sw = s.slotWarnetId ? gameData.slotWarnet.find(x => x.id === s.slotWarnetId) : null, pc = sw?.pcId ? gameData.daftarPC.find(p => p.id === sw.pcId) : null; d.className = `expan-slot border-2 rounded-lg p-2 flex flex-col items-center justify-center ${isT ? 'slot-terkunci border-gray-600 cursor-pointer' : 'border-blue-500 bg-gray-800/60'}`; if(isT) { const r = gameData.dataRuangan[gameData.ruanganAktif], aa = (gameData.ruanganAktif === 'tengah' && a === 'depan') || (r.status === 'aktif' && r.areaDepan.status === 'aktif' && a === 'depan') || (r.areaBelakang.status === 'aktif' && a === 'belakang'); if(aa) { d.innerHTML = `<div class="text-2xl mb-1">🔒</div><p class="text-[10px] font-bold text-gray-400 text-center">Terkunci</p><p class="text-[8px] text-orange-400 mt-1">${formatUang(HARGA_SLOT)}</p>`; d.onclick = () => beliSlot(a, i); } else { d.innerHTML = `<div class="text-2xl mb-1 opacity-30">🔒</div><p class="text-[10px] text-gray-500 text-center">Terkunci</p>`; } } else { if(pc) { const ir = pc.status === 'rusak'; d.innerHTML = `<div class="text-2xl mb-1 ${ir ? 'grayscale' : ''}">🖥️</div><p class="font-bold text-[10px] ${ir ? 'text-red-400' : 'text-blue-400'} text-center">${pc.nama}</p>${ir ? '<span class="bg-red-600 text-white text-[8px] px-1 rounded mt-1">RUSAK</span>' : ''}`; } else { d.innerHTML = `<div class="text-2xl mb-1 opacity-40">🖥️</div><p class="text-[10px] font-bold text-green-400 text-center">Kosong</p>`; } } return d; }
+        function beliSlot(a, i) { const r = gameData.dataRuangan[gameData.ruanganAktif], s = a === 'depan' ? r.areaDepan.slots : r.areaBelakang.slots, slot = s[i]; if(slot.status !== 'terkunci') return; if(gameData.statePemain.uang < HARGA_SLOT) { showToast(`Uang tidak cukup!`, "gagal"); return; } showConfirm("Beli Slot", `Beli slot baru seharga <b class="text-green-400">${formatUang(HARGA_SLOT)}</b>?`, "🔓", () => { gameData.statePemain.uang -= HARGA_SLOT; slot.status = 'terbuka'; const nid = gameData.slotWarnet.length + 1; gameData.slotWarnet.push({ id: nid, status: 'kosong', pcId: null }); slot.slotWarnetId = nid; renderHeader(); renderExPan(); showToast("Slot berhasil dibeli!", "sukses"); }); }
+        function beliArea(a) { if(a !== 'belakang') return; const r = gameData.dataRuangan[gameData.ruanganAktif]; if(r.areaBelakang.status !== 'terkunci') return; if(gameData.ruanganAktif === 'tengah') { const sd = r.areaDepan.slots.filter(s => s.status === 'terbuka').length; if(sd < 4) { showToast(`🔒 Minimal beli 4 slot di Area Depan dulu! (Baru ${sd}/4)`, "gagal"); return; } } if(gameData.statePemain.uang < HARGA_AREA) { showToast(`Uang tidak cukup!`, "gagal"); return; } showConfirm("Buka Area Belakang", `Buka Area Belakang seharga <b class="text-green-400">${formatUang(HARGA_AREA)}</b>?`, "🏗️", () => { gameData.statePemain.uang -= HARGA_AREA; r.areaBelakang.status = 'aktif'; r.areaBelakang.slots = []; for(let i=0; i<6; i++) r.areaBelakang.slots.push({ status: 'terkunci', slotWarnetId: null }); renderHeader(); renderExPan(); showToast("Area Belakang berhasil dibuka!", "sukses"); }); }
+        function updateExPanInfo() { const info = document.getElementById('expan-info-syarat'), r = gameData.dataRuangan[gameData.ruanganAktif]; if(gameData.ruanganAktif === 'tengah' && r.areaBelakang.status === 'terkunci') { const st = r.areaDepan.slots.filter(s => s.status === 'terbuka').length, k = 4 - st; info.innerHTML = k > 0 ? `💡 Beli ${k} slot lagi di Area Depan (${st}/4)` : `✅ Sudah bisa buka Area Belakang!`; } else if(gameData.ruanganAktif !== 'tengah' && r.status === 'aktif' && r.areaBelakang.status === 'terkunci') { info.innerHTML = `💡 Beli slot di Area Depan dulu`; } else if(gameData.dataRuangan.kiri.status === 'terkunci' || gameData.dataRuangan.kanan.status === 'terkunci') { const bt = gameData.dataRuangan.tengah.areaBelakang; if(bt.status === 'aktif') { const st = bt.slots.filter(s => s.status === 'terbuka').length, k = 2 - st; info.innerHTML = k > 0 ? `💡 Beli ${k} slot lagi di Area Belakang (${st}/2)` : `✅ Sudah bisa buka Ruang Kiri/Kanan!`; } else info.innerHTML = `💡 Buka Area Belakang dulu!`; } else info.innerHTML = `✅ Semua area sudah terbuka!`; }
+
+        // ==========================================
+        // LAYOUT FULLSCREEN
+        // ==========================================
+        function bukaModalLayout() { document.getElementById('modal-layout-backdrop').classList.remove('hidden'); document.getElementById('modal-layout-backdrop').classList.add('flex'); document.getElementById('layout-nama-ruangan').innerText = gameData.dataRuangan[gameData.ruanganAktif]?.nama || 'Ruang Utama'; renderLayoutGrid(); const p = document.getElementById('panel-pc-siap-bawah'), h = document.getElementById('panel-bottom-handle'); p.classList.remove('panel-bottom-hidden'); p.classList.add('panel-bottom-visible'); isPanelBottomVisible = true; p.onmouseenter = () => { clearTimeout(panelBottomTimer); p.classList.remove('panel-bottom-hidden'); p.classList.add('panel-bottom-visible'); isPanelBottomVisible = true; }; p.onmouseleave = () => { p.classList.add('panel-bottom-hidden'); p.classList.remove('panel-bottom-visible'); isPanelBottomVisible = false; }; h.onclick = () => { if(p.classList.contains('panel-bottom-hidden')) { p.classList.remove('panel-bottom-hidden'); p.classList.add('panel-bottom-visible'); isPanelBottomVisible = true; } else { p.classList.add('panel-bottom-hidden'); p.classList.remove('panel-bottom-visible'); isPanelBottomVisible = false; } }; }
+        function tutupModalLayout() { document.getElementById('modal-layout-backdrop').classList.add('hidden'); document.getElementById('modal-layout-backdrop').classList.remove('flex'); renderWarnetLayout(); }
+        function renderLayoutGrid() { const r = gameData.dataRuangan[gameData.ruanganAktif]; if(!r) return; const c = document.getElementById('layout-grid-container'); c.style.gridTemplateColumns = `repeat(3, 1fr)`; c.innerHTML = ''; const ss = [...r.areaDepan.slots.filter(s => s.status === 'terbuka'), ...r.areaBelakang.slots.filter(s => s.status === 'terbuka')]; ss.forEach(s => { const sw = gameData.slotWarnet.find(x => x.id === s.slotWarnetId), pc = sw?.pcId ? gameData.daftarPC.find(p => p.id === sw.pcId) : null, d = document.createElement('div'); d.className = `grid-slot w-36 h-36 md:w-48 md:h-48 border-2 rounded-xl p-3 flex flex-col items-center justify-center transition-all border-blue-500 bg-gray-800/80 cursor-grab active:cursor-grabbing`; d.setAttribute('draggable', 'true'); d.ondragstart = (e) => dragPCLayout(e, s.slotWarnetId); d.ondragover = (e) => { e.preventDefault(); d.classList.add('slot-drag-over'); }; d.ondragleave = () => d.classList.remove('slot-drag-over'); d.ondrop = (e) => dropPCLayout(e, s.slotWarnetId); if(pc) { const ir = pc.status === 'rusak'; d.innerHTML = `<div class="text-4xl mb-1 ${ir ? 'grayscale' : ''}">🖥️</div><p class="font-bold text-sm ${ir ? 'text-red-400' : 'text-blue-400'} text-center">${pc.nama}</p><p class="text-[10px] text-gray-400 mt-1">${formatUang(pc.hargaPerJam)}/jam</p>${ir ? '<span class="bg-red-600 text-white text-[10px] px-1 rounded mt-1">RUSAK</span>' : ''}`; } else { d.innerHTML = `<div class="text-3xl mb-1 opacity-40">🖥️</div><p class="text-xs font-bold text-green-400 text-center">Slot Kosong</p><p class="text-[10px] text-gray-400 mt-1">Siap Pasang</p>`; } c.appendChild(d); }); if(ss.length === 0) c.innerHTML = '<div class="col-span-3 text-center text-gray-400 py-8">Belum ada slot terbuka</div>'; renderLayoutPCSiapBawah(); document.getElementById('count-pc-siap-layout').innerText = gameData.pcSiapPasang.length; }
+        function renderLayoutPCSiapBawah() { const c = document.getElementById('layout-pc-siap-container-bawah'); c.innerHTML = ''; if(gameData.pcSiapPasang.length === 0) { c.innerHTML = '<p class="text-gray-400 text-sm py-4 px-4 italic">Belum ada PC siap pasang.</p>'; return; } gameData.pcSiapPasang.forEach(pc => { const ir = pc.status === 'rusak', d = document.createElement('div'); d.className = `pc-item-bawah bg-gray-800 border-2 ${ir ? 'border-red-600' : 'border-blue-500'} rounded-xl p-3 cursor-grab active:cursor-grabbing hover:bg-gray-700 flex-shrink-0`; d.setAttribute('draggable', 'true'); d.ondragstart = (e) => dragPCDariSiap(e, pc.id); d.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl ${ir ? 'grayscale' : ''}">🖥️</span><div><p class="font-bold text-xs ${ir ? 'text-red-400' : 'text-blue-400'}">${pc.nama}</p><p class="text-[10px] text-gray-400">${formatUang(pc.hargaPerJam)}/jam</p></div>${ir ? '<span class="bg-red-600 text-white text-[10px] px-1 rounded ml-auto">RUSAK</span>' : ''}</div>`; c.appendChild(d); }); }
+        function dragPCDariSiap(e, id) { e.dataTransfer.setData("application/json", JSON.stringify({ type: 'pcSiap', pcId: id })); }
+        function dragPCLayout(e, sid) { if(!sid) return; const s = gameData.slotWarnet.find(x => x.id === sid); if(s && s.pcId) e.dataTransfer.setData("application/json", JSON.stringify({ type: 'pcTerpasang', slotWarnetId: sid, pcId: s.pcId })); }
+        function dropPCLayout(e, tid) { e.preventDefault(); e.target.classList.remove('slot-drag-over'); const ts = gameData.slotWarnet.find(s => s.id === tid); if(!ts || ts.status === 'terisi') { showToast("Slot sudah terisi!", "gagal"); return; } let ds = e.dataTransfer.getData("application/json"); if(!ds) return; let d = JSON.parse(ds); if(d.type === 'pcSiap') { const idx = gameData.pcSiapPasang.findIndex(p => p.id === d.pcId); if(idx === -1) return; const pc = gameData.pcSiapPasang.splice(idx, 1)[0]; pc.status = pc.status === 'rusak' ? 'rusak' : 'kosong'; gameData.daftarPC.push(pc); ts.status = 'terisi'; ts.pcId = pc.id; showToast(`${pc.nama} dipasang!`, "sukses"); } else if(d.type === 'pcTerpasang') { const ss = gameData.slotWarnet.find(s => s.id === d.slotWarnetId); if(!ss || ss.pcId !== d.pcId) return; const pc = gameData.daftarPC.find(p => p.id === d.pcId); if(!pc) return; if(pc.status !== 'kosong' && pc.status !== 'rusak') { showToast("PC sedang digunakan!", "gagal"); return; } ss.status = 'kosong'; ss.pcId = null; ts.status = 'terisi'; ts.pcId = pc.id; showToast(`${pc.nama} dipindahkan!`, "sukses"); } renderLayoutGrid(); renderWarnetLayout(); }
+
+        // ==========================================
+        // PELAYANAN & GAME LOOP
+        // ==========================================
+        function panggilPelangganOtomatis() { if(!gameData.statePemain.tokoBuka || gameData.statePemain.isBlackout) return; let pk = gameData.daftarPC.filter(p => p.status === 'kosong'); if(pk.length > 0) { let pc = pk[Math.floor(Math.random() * pk.length)], at = CUSTOMER_TIERS.filter(t => gameData.statePemain.rating >= t.minRating), st = at[Math.floor(Math.random() * at.length)], dj = Math.floor(Math.random() * (st.maxHours - st.minHours + 1)) + st.minHours, mult = st.multiplier + (Math.random() * 0.2), hd = Math.round((dj * pc.hargaPerJam * mult) / 500) * 500; pc.status = "menunggu"; pc.tawaranWaktuJam = dj; pc.tawaranHarga = hd; pc.waktuTungguNego = 30; pc.pelangganIcon = st.icon; if(document.getElementById('halaman-komputer').classList.contains('flex') && !document.getElementById('os-app-billing').classList.contains('hidden')) renderPelayanan(); } }
+        function terimaTawaran(id) { let pc = gameData.daftarPC.find(p => p.id === id); if(pc && pc.status === "menunggu") { pc.status = "jalan"; pc.totalWaktuJam = pc.tawaranWaktuJam; pc.sisaWaktuJam = pc.tawaranWaktuJam; pc.hargaDeal = pc.tawaranHarga; renderPelayanan(); } }
+        function tolakTawaran(id) { let pc = gameData.daftarPC.find(p => p.id === id); if(pc && pc.status === "menunggu") { pc.status = "kosong"; renderPelayanan(); } }
+        function ambilUang(id) { let pc = gameData.daftarPC.find(p => p.id === id); if(pc && pc.status === "selesai") { gameData.statePemain.uang += pc.hargaDeal; pc.hargaDeal = 0; pc.status = "kosong"; tambahXP(); renderHeader(); renderPelayanan(); showToast("Pendapatan Diterima!", "sukses"); } }
+        function renderPelayanan() { const c = document.getElementById('pc-container-pelayanan'); if(!c) return; c.innerHTML = ""; c.className = "flex-grow overflow-y-auto custom-scroll grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4"; if(gameData.daftarPC.length === 0) { c.innerHTML = `<div class="col-span-full bg-gray-800/50 rounded-xl p-8 text-center border border-dashed border-gray-600 m-2"><p class="text-gray-400">Belum ada PC yang dipasang.</p></div>`; return; } gameData.daftarPC.forEach(pc => { let hc = ""; if(gameData.statePemain.isBlackout && (pc.status === 'jalan' || pc.status === 'menunggu')) { let sw = pc.sisaSabarMatiLampu ? (pc.sisaSabarMatiLampu / 15) * 100 : 0; hc = `<div class="bg-gray-800 rounded-xl p-4 border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] relative opacity-50 grayscale"><div class="absolute top-2 right-2 flex space-x-1"><span class="w-3 h-3 bg-red-600 rounded-full animate-ping"></span></div><div class="text-4xl mb-2 text-center drop-shadow-md">🌑</div><h3 class="font-bold text-center text-lg mb-1 text-red-300">MATI LAMPU</h3><p class="text-xs text-center text-red-400 font-bold mb-1">Kesabaran:</p><div class="w-full bg-gray-700 h-2 mb-3 rounded overflow-hidden"><div class="bg-red-500 h-full" style="width: ${sw}%"></div></div></div>`; } else if(pc.status === "kosong") { hc = `<div class="bg-gray-800 rounded-xl p-4 border border-blue-600/50 shadow-lg relative"><div class="text-4xl mb-2 text-center opacity-50">🖥️</div><h3 class="font-bold text-center text-lg mb-4 text-blue-100">${pc.nama}</h3><p class="text-xs text-center text-blue-400/50 font-tech italic">Standby...</p></div>`; } else if(pc.status === "rusak") { hc = `<div class="bg-gray-800 rounded-xl p-4 border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] relative opacity-70 grayscale"><div class="absolute top-2 right-2 flex space-x-1"><span class="w-3 h-3 bg-red-600 rounded-full animate-ping"></span></div><div class="text-4xl mb-2 text-center drop-shadow-md">⚠️</div><h3 class="font-bold text-center text-lg mb-1 text-red-400">${pc.nama}</h3><p class="text-xs text-center text-gray-400 font-bold mb-1">HARDWARE ERROR</p></div>`; } else if(pc.status === "menunggu") { let ps = (pc.waktuTungguNego / 30) * 100; hc = `<div class="bg-gray-800 rounded-xl p-4 border-2 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] relative"><div class="absolute top-2 right-2 flex space-x-1"><span class="w-3 h-3 bg-yellow-500 rounded-full animate-ping"></span></div><div class="text-4xl mb-2 text-center drop-shadow-md">${pc.pelangganIcon || '🙋‍♂️'}</div><h3 class="font-bold text-center text-lg mb-1 text-blue-100">${pc.nama}</h3><div class="bg-gray-900 rounded-lg p-2 mb-2 text-center border border-gray-700"><p class="text-sm font-bold text-blue-400">${pc.tawaranWaktuJam} Jam</p><p class="text-sm font-bold text-green-400">${formatUang(pc.tawaranHarga)}</p></div><div class="w-full bg-gray-700 h-1 mb-3 rounded overflow-hidden"><div class="bg-red-500 h-full" style="width: ${ps}%"></div></div><div class="flex gap-2"><button onclick="tolakTawaran(${pc.id})" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-1.5 rounded text-xs font-bold">Tolak</button><button onclick="terimaTawaran(${pc.id})" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded text-xs font-bold">Terima</button></div></div>`; } else if(pc.status === "jalan") { let p = pc.totalWaktuJam > 0 ? ((pc.totalWaktuJam - pc.sisaWaktuJam) / pc.totalWaktuJam) * 100 : 0; hc = `<div class="bg-gray-800 rounded-xl p-4 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)] relative"><div class="absolute top-2 right-2 flex space-x-1"><span class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span></div><div class="text-4xl mb-2 text-center drop-shadow-md">${pc.pelangganIcon || '👨‍💻'}</div><h3 class="font-bold text-center text-lg mb-1 text-blue-100">${pc.nama}</h3><div class="w-full bg-gray-700 rounded-full h-2 mb-2"><div class="bg-blue-500 h-2 rounded-full" style="width: ${p}%"></div></div><p class="text-xs text-center text-blue-300 mb-4">Sisa: ${pc.sisaWaktuJam?.toFixed(1) || 0} Jam</p></div>`; } else if(pc.status === "selesai") { let ps = (pc.waktuTungguBayar / 20) * 100; hc = `<div class="bg-gray-800 rounded-xl p-4 border-2 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)] relative bg-green-900/10"><div class="absolute top-2 right-2 flex space-x-1"><span class="w-3 h-3 bg-green-400 rounded-full animate-bounce"></span></div><div class="text-4xl mb-2 text-center drop-shadow-md">💵</div><h3 class="font-bold text-center text-lg mb-1 text-blue-100">${pc.nama}</h3><div class="w-full bg-gray-700 h-1 mb-2 mt-2 rounded overflow-hidden"><div class="bg-red-500 h-full" style="width: ${ps}%"></div></div><button onclick="ambilUang(${pc.id})" class="w-full bg-green-500 hover:bg-green-400 text-gray-900 py-2 rounded text-sm font-extrabold mt-2">Ambil ${formatUang(pc.hargaDeal)}</button></div>`; } c.innerHTML += hc; }); }
+        function renderWarnetLayout() { let lh = ""; gameData.pcSiapPasang.forEach(pc => { let ib = pc.status === 'rusak', bc = ib ? "border-red-500 bg-red-900/20" : "border-blue-500 bg-gray-800", nc = ib ? "text-red-400" : "text-blue-400", t = ib ? `<span class="text-xs bg-red-600 text-white px-1 rounded ml-1">RUSAK</span>` : ""; lh += `<div draggable="true" ondragstart="dragPC(event, '${pc.id}', null)" class="${bc} border p-3 rounded-lg shadow-md cursor-grab active:cursor-grabbing hover:bg-gray-700 transition-colors relative overflow-hidden group pointer-events-auto z-10"><div class="flex justify-between items-center mb-1"><span class="font-bold ${nc}">🖥️ ${pc.nama}</span> ${t}</div><p class="text-[11px] text-gray-400">Tarif: <span class="text-green-400 font-bold">${formatUang(pc.hargaPerJam)}/jam</span></p></div>`; }); document.getElementById('list-pc-siap').innerHTML = lh; document.getElementById('badge-siap').innerText = gameData.pcSiapPasang.length; const gw = document.getElementById('grid-warnet'); if(!gw) return; gw.innerHTML = ""; Object.values(gameData.dataRuangan).forEach(r => { if(r.status !== 'aktif') return; [...r.areaDepan.slots, ...r.areaBelakang.slots].forEach(s => { if(s.status !== 'terbuka') return; const sw = gameData.slotWarnet.find(x => x.id === s.slotWarnetId); if(!sw) return; if(sw.status === 'kosong') { gw.innerHTML += `<div ondragover="allowDrop(event)" ondrop="dropPC(event, ${sw.id})" class="bg-gray-800/60 border-2 border-dashed border-green-500/50 rounded-xl p-4 text-center hover:border-green-400 hover:bg-gray-800 transition-all flex flex-col justify-center min-h-[160px] shadow-inner relative"><div class="absolute top-2 left-2 bg-gray-900 text-gray-500 text-[10px] px-2 py-0.5 rounded font-bold border border-gray-700">${r.nama} - S${sw.id}</div><div class="text-2xl mb-1 text-green-500 opacity-50">+</div><p class="text-sm font-bold text-green-400">Kosong</p></div>`; } else if(sw.status === 'terisi') { let pc = gameData.daftarPC.find(p => p.id === sw.pcId); if(pc && pc.status === 'rusak') { gw.innerHTML += `<div draggable="true" ondragstart="dragPC(event, '${pc.id}', ${sw.id})" class="bg-red-950/40 border-2 border-red-600 rounded-xl p-4 text-center shadow-[0_0_15px_rgba(220,38,38,0.3)] cursor-grab active:cursor-grabbing hover:bg-red-900/60 relative group min-h-[160px] flex flex-col justify-center animate-pulse"><div class="absolute top-2 left-2 bg-red-900 text-red-200 text-[10px] px-2 py-0.5 rounded font-bold border border-red-700">${r.nama} - S${sw.id}</div><div class="text-5xl mb-2 drop-shadow-md">💥</div><h4 class="font-bold text-sm text-red-400">${pc.nama} [RUSAK]</h4></div>`; } else { gw.innerHTML += `<div draggable="true" ondragstart="dragPC(event, '${pc.id}', ${sw.id})" class="bg-gray-800 border-2 border-blue-500 rounded-xl p-4 text-center shadow-lg bg-blue-900/10 cursor-grab active:cursor-grabbing hover:bg-gray-700 relative group min-h-[160px] flex flex-col justify-center"><div class="absolute top-2 left-2 bg-blue-900 text-blue-300 text-[10px] px-2 py-0.5 rounded font-bold border border-blue-700">${r.nama} - S${sw.id}</div><div class="text-4xl mb-2 drop-shadow-md">🖥️</div><h4 class="font-bold text-sm text-blue-400">${pc ? pc.nama : 'PC'}</h4></div>`; } } }); }); }
+        function dragPC(e, id, sid = null) { e.dataTransfer.setData("application/json", JSON.stringify({ pcId: parseInt(id), sourceSlotId: sid })); }
+        function allowDrop(e) { e.preventDefault(); }
+        function dropPC(e, tid) { e.preventDefault(); let ds = e.dataTransfer.getData("application/json"); if(ds) { let d = JSON.parse(ds); pindahkanPCKeSlot(d.pcId, tid, d.sourceSlotId); } }
+        function pindahkanPCKeSlot(pid, tid, sid) { let ts = gameData.slotWarnet.find(s => s.id === tid); if(ts && ts.status === 'kosong') { if(sid === null) { let idx = gameData.pcSiapPasang.findIndex(p => p.id === pid); if(idx !== -1) { let pc = gameData.pcSiapPasang.splice(idx, 1)[0]; pc.status = pc.status === 'rusak' ? 'rusak' : 'kosong'; gameData.daftarPC.push(pc); ts.status = 'terisi'; ts.pcId = pc.id; } } else { let ss = gameData.slotWarnet.find(s => s.id === sid); if(ss && ss.pcId === pid) { ss.status = 'kosong'; ss.pcId = null; ts.status = 'terisi'; ts.pcId = pid; } } renderWarnetLayout(); if(!document.getElementById('os-app-billing').classList.contains('hidden')) renderPelayanan(); } }
+        function kembalikanKeGudang(e) { e.preventDefault(); document.getElementById('area-kembali-gudang').classList.remove('drop-zone-active'); let ds = e.dataTransfer.getData("application/json"); if(ds) { let d = JSON.parse(ds); if(d.sourceSlotId !== null) { let ss = gameData.slotWarnet.find(s => s.id === d.sourceSlotId); if(ss) { let idx = gameData.daftarPC.findIndex(p => p.id === d.pcId); if(idx !== -1) { let pc = gameData.daftarPC.splice(idx, 1)[0]; if(pc.status !== 'kosong' && pc.status !== 'rusak') { showToast("PC sedang digunakan!", "gagal"); gameData.daftarPC.splice(idx, 0, pc); return; } ss.status = 'kosong'; ss.pcId = null; pc.status = pc.status === 'rusak' ? 'rusak' : 'siap'; gameData.pcSiapPasang.push(pc); showToast(pc.status === 'rusak' ? "PC Rusak ditarik." : "PC ditarik ke Gudang!"); renderWarnetLayout(); pindahHalaman('rakit'); } } } } }
+
+        // ==========================================
+        // GAME LOOP DENGAN WAKTU 3 MENIT/DETIK + ANIMASI
+        // ==========================================
+        function updateDayNightCycle(hf) { let o = document.getElementById('day-night-overlay'); if(!o) return; let bg = "rgba(0,0,0,0)"; if(hf >= 6 && hf < 17) bg = "rgba(0,0,0,0)"; else if(hf >= 17 && hf < 18.5) { let p = (hf - 17) / 1.5; bg = `rgba(234,88,12,${p*0.4})`; } else if(hf >= 18.5 && hf < 19.5) { let p = (hf - 18.5); bg = `rgba(15,23,42,${0.4+p*0.4})`; } else if(hf >= 19.5 || hf < 5) bg = "rgba(15,23,42,0.8)"; else if(hf >= 5 && hf < 6) { let p = (hf - 5); bg = `rgba(15,23,42,${0.8-p*0.8})`; } o.style.backgroundColor = bg; if(!gameData.statePemain.isBlackout) renderEfekVisualListrik(); }
+        function animasiWaktu(tm) { if(waktuAnimationInterval) clearInterval(waktuAnimationInterval); waktuAnimationInterval = setInterval(() => { if(gameData.menitInGame < tm) { gameData.menitInGame++; if(gameData.menitInGame >= 1440) gameData.menitInGame = 0; document.getElementById('ui-jam').innerText = formatJam(gameData.menitInGame); const oc = document.getElementById('os-clock'); if(oc) oc.innerText = formatJam(gameData.menitInGame); updateDayNightCycle(gameData.menitInGame / 60); } else { clearInterval(waktuAnimationInterval); waktuAnimationInterval = null; } }, 50); }
+
+        setInterval(() => { let rp = false, ws = Date.now(), tm = gameData.menitInGame + 3; if(tm >= 1440) tm -= 1440; animasiWaktu(tm); let ch = Math.floor(gameData.menitInGame / 60); if(ch >= 8 && ch < 12 && Math.random() < 0.05) { let bp = gameData.daftarPC.filter(p => p.status === 'jalan' && p.pelangganIcon === '👦'); if(bp.length > 0) { let t = bp[Math.floor(Math.random() * bp.length)]; t.status = 'kosong'; t.hargaDeal = 0; showToast("🚨 RAZIA EMAK!", "gagal"); rp = true; } } if(!gameData.statePemain.isBlackout && gameData.statePemain.tokenListrik > 0 && Math.random() < 0.01) triggerBlackout(true); if(gameData.statePemain.tokoBuka && Math.random() < 0.2) panggilPelangganOtomatis(); let apc = 0; gameData.daftarPC.forEach(pc => { if(pc.status === "jalan") apc++; if(gameData.statePemain.isBlackout && (pc.status === 'jalan' || pc.status === 'menunggu')) { if(pc.sisaSabarMatiLampu > 0) pc.sisaSabarMatiLampu--; else { pc.status = "kosong"; pc.hargaDeal = 0; kurangiRating(0.05, "Pelanggan pergi (Mati Lampu)"); } rp = true; } else { if(pc.status === "jalan" && pc.sisaWaktuJam > 0) { pc.sisaWaktuJam -= 0.1; rp = true; if(pc.sisaWaktuJam <= 0.05) { pc.sisaWaktuJam = 0; if(pc.pelangganIcon === '👦' && Math.random() < 0.15) { pc.status = "rusak"; pc.hargaDeal = 0; showToast(`💥 Si Bocil merusak ${pc.nama}!`, "gagal"); if(document.getElementById('halaman-warnet').classList.contains('block')) renderWarnetLayout(); } else { pc.status = "selesai"; pc.waktuTungguBayar = 20; } } } else if(pc.status === "menunggu") { pc.waktuTungguNego--; rp = true; if(pc.waktuTungguNego <= 0) { pc.status = "kosong"; kurangiRating(0.1, "Antrean diabaikan"); } } else if(pc.status === "selesai") { pc.waktuTungguBayar--; rp = true; if(pc.waktuTungguBayar <= 0) { pc.status = "kosong"; pc.hargaDeal = 0; kurangiRating(0.2, "Kasir lelet"); } } } }); if(!gameData.statePemain.isBlackout && apc > 0) { gameData.statePemain.tokenListrik -= (apc * 0.5); if(gameData.statePemain.tokenListrik <= 0) { gameData.statePemain.tokenListrik = 0; triggerBlackout(false); } document.getElementById('ui-token').innerText = Math.floor(gameData.statePemain.tokenListrik); const td = document.getElementById('app-token-display'); if(td) td.innerText = Math.floor(gameData.statePemain.tokenListrik); } gameData.daftarPaket.forEach(p => { if(p.status === 'dikirim' && ws >= p.waktuTiba) { p.status = 'siap'; cekNotifikasiPaket(); } }); let ss = [], as = false; gameData.daftarServis.forEach(item => { if(ws >= item.waktuSelesai) { item.isRusak = false; delete item.waktuSelesai; gameData.inventori.push(item); as = true; showToast(`🔧 Servis Beres! ${item.nama} kembali.`, "sukses"); } else ss.push(item); }); if(as) { gameData.daftarServis = ss; if(document.getElementById('halaman-rakit').classList.contains('grid')) renderRakitDanGudang(); renderSemuaTokoLuar(); } if(rp && !document.getElementById('os-app-billing')?.classList.contains('hidden')) renderPelayanan(); if(modalPaketTerbuka) renderModalPaket(); if(!document.getElementById('modal-serfice-backdrop')?.classList.contains('hidden')) renderModalSerfice(); if(!document.getElementById('os-app-expan')?.classList.contains('hidden')) renderExPan(); }, 1000);
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        cekSaveData();
+    </script>
+</body>
+</html>
