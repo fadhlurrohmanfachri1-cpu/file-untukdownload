@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Lab PIWA - Login</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0d2137 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+            width: 100%;
+            max-width: 430px;
+            padding: 40px 35px;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-area {
+            margin-bottom: 25px;
+        }
+
+        .logo-circle {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            box-shadow: 0 8px 25px rgba(26, 60, 110, 0.3);
+            overflow: hidden;
+            border: 3px solid #1a3c6e;
+            position: relative;
+        }
+
+        .logo-image {
+            width: 105px;
+            height: 105px;
+            object-fit: contain;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-fallback {
+            position: absolute;
+            font-size: 36px;
+            font-weight: 800;
+            color: #1a3c6e;
+            z-index: 1;
+            letter-spacing: 2px;
+        }
+
+        .school-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a3c6e;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+        }
+
+        .app-name {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            height: 3px;
+            width: 60px;
+            background: linear-gradient(90deg, #1a3c6e, #4a90d9);
+            margin: 0 auto 30px;
+            border-radius: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            font-size: 18px;
+            color: #999;
+            z-index: 1;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+            color: #333;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #2a5f8f;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(42, 95, 143, 0.1);
+        }
+
+        .input-group input::placeholder {
+            color: #bbb;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1a3c6e, #2a5f8f);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(26, 60, 110, 0.35);
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #15325a, #1e4d73);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(26, 60, 110, 0.45);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .notification {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            display: none;
+            text-align: center;
+        }
+
+        .notification.error {
+            background: #ffeaea;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+            display: block;
+        }
+
+        .notification.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            display: block;
+        }
+
+        .footer-text {
+            margin-top: 25px;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            .school-name {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo-area">
+            <div class="logo-circle">
+                <span class="logo-fallback">FIWA</span>
+                <img src="logopiwalandscape.png" alt="Logo" class="logo-image" onerror="this.style.display='none'">
+            </div>
+            <div class="school-name">FITRAH ISLAMIC WORLD ACADEMY</div>
+            <div class="app-name">Sistem Booking Laboratorium</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="notification" class="notification"></div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Email</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">📧</span>
+                    <input type="email" id="email" placeholder="nama@fiwa.sch.id" required autocomplete="email">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" placeholder="Masukkan password" required autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="btnLogin">
+                <span id="btnText">MASUK</span>
+                <span id="btnSpinner" style="display: none;">
+                    <span class="spinner"></span> Memproses...
+                </span>
+            </button>
+        </form>
+
+        <div class="footer-text">
+            © 2025 FITRAH ISLAMIC WORLD ACADEMY • v1.0
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqw6LUVLS7Uhza9ZwbhsI81oFMTsE1xyg",
+            authDomain: "bookinglabpiwa.firebaseapp.com",
+            projectId: "bookinglabpiwa",
+            storageBucket: "bookinglabpiwa.firebasestorage.app",
+            messagingSenderId: "793768426207",
+            appId: "1:793768426207:web:1abe1b8942d34cf621476a"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const daftarSupervisor = [
+            'fadhlurrohman.fachri1@fiwa.sch.id'
+        ];
+
+        const loginForm = document.getElementById('loginForm');
+        const notification = document.getElementById('notification');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnLogin = document.getElementById('btnLogin');
+
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            setTimeout(() => { notification.className = 'notification'; }, 5000);
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnLogin.disabled = true;
+                btnText.style.display = 'none';
+                btnSpinner.style.display = 'inline';
+            } else {
+                btnLogin.disabled = false;
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+            }
+        }
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showNotification('⚠️ Email dan password wajib diisi!', 'error');
+                return;
+            }
+
+            setLoading(true);
+            showNotification('🔄 Sedang memverifikasi...', 'success');
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userEmail = userCredential.user.email;
+
+                let role = 'guru';
+                if (daftarSupervisor.includes(userEmail)) {
+                    role = 'supervisor';
+                }
+
+                // Simpan info user (TANPA isLoggedIn)
+                localStorage.setItem('userEmail', userEmail);
+                localStorage.setItem('userRole', role);
+
+                showNotification('✅ Login berhasil! Mengarahkan...', 'success');
+
+                setTimeout(() => {
+                    if (role === 'supervisor') {
+                        window.location.href = 'dashboard-supervisor.html';
+                    } else {
+                        window.location.href = 'dashboard-guru.html';
+                    }
+                }, 1000);
+
+            } catch (error) {
+                setLoading(false);
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        showNotification('❌ Email tidak terdaftar!', 'error');
+                        break;
+                    case 'auth/wrong-password':
+                        showNotification('❌ Password salah!', 'error');
+                        break;
+                    case 'auth/invalid-email':
+                        showNotification('❌ Format email tidak valid!', 'error');
+                        break;
+                    case 'auth/invalid-credential':
+                        showNotification('❌ Email atau password salah!', 'error');
+                        break;
+                    case 'auth/too-many-requests':
+                        showNotification('⏳ Terlalu banyak percobaan.', 'error');
+                        break;
+                    default:
+                        showNotification('❌ Login gagal: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

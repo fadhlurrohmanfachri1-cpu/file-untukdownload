@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Guru - Booking Lab PIWA</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+        .header { background: linear-gradient(135deg, #0a1628, #1a3a5c); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-logo { width: 45px; height: 45px; border-radius: 50%; object-fit: contain; background: white; padding: 3px; }
+        .header-title h2 { font-size: 18px; letter-spacing: 0.5px; }
+        .header-title span { font-size: 12px; opacity: 0.8; }
+        .header-right { display: flex; align-items: center; gap: 15px; position: relative; }
+        .user-email { font-size: 12px; opacity: 0.9; }
+        .user-role { font-size: 10px; background: #4a90d9; padding: 2px 10px; border-radius: 20px; display: inline-block; margin-top: 3px; letter-spacing: 0.5px; }
+        .btn-logout { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; transition: 0.3s; }
+        .btn-logout:hover { background: #c0392b; }
+
+        /* NOTIFICATION BELL */
+        .notif-container { position: relative; cursor: pointer; }
+        .notif-bell { font-size: 22px; }
+        .notif-badge { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; display: none; }
+        .notif-dropdown { display: none; position: absolute; top: 40px; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 350px; max-height: 400px; overflow-y: auto; z-index: 500; }
+        .notif-dropdown.show { display: block; }
+        .notif-dropdown-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; font-weight: 700; font-size: 13px; color: #1a3c6e; position: sticky; top: 0; background: white; z-index: 1; }
+        .notif-dropdown-header button { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .notif-dropdown-header button:hover { text-decoration: underline; }
+        .notif-item { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 13px; color: #333; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item .time { font-size: 10px; color: #999; margin-top: 4px; }
+        .notif-empty { padding: 20px; text-align: center; color: #999; font-size: 13px; }
+
+        .main-content { max-width: 1300px; margin: 30px auto; padding: 0 20px; }
+
+        .selector-bar { background: white; border-radius: 16px; padding: 20px 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .selector-bar label { font-weight: 700; font-size: 14px; color: #1a3c6e; white-space: nowrap; }
+        .selector-bar select { padding: 12px 18px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; outline: none; cursor: pointer; min-width: 250px; background: #fafbfc; transition: 0.3s; font-family: inherit; }
+        .selector-bar select:focus { border-color: #2a5f8f; background: white; box-shadow: 0 0 0 4px rgba(42,95,143,0.1); }
+
+        .tab-nav { display: flex; gap: 5px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e8edf2; color: #666; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 10px 10px 0 0; transition: 0.3s; }
+        .tab-btn.active { background: white; color: #1a3c6e; font-weight: 700; }
+
+        .card { background: white; border-radius: 0 16px 16px 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .calendar-header h3 { color: #1a3c6e; font-size: 18px; }
+        .week-nav { display: flex; align-items: center; gap: 8px; }
+        .week-nav button { background: white; color: #1a3c6e; border: 2px solid #1a3c6e; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
+        .week-nav button:hover:not(:disabled) { background: #1a3c6e; color: white; }
+        .week-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .week-label { font-weight: 700; color: #1a3c6e; font-size: 13px; min-width: 220px; text-align: center; padding: 7px 12px; background: #f0f4f8; border-radius: 8px; }
+
+        .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e8edf2; }
+        .calendar-table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px; }
+        .calendar-table th { background: #1a3c6e; color: white; padding: 10px 6px; text-align: center; font-size: 11px; font-weight: 600; border: 1px solid #15325a; }
+        .calendar-table th:first-child { background: #0f2747; width: 70px; }
+        .calendar-table td { border: 1px solid #e0e6ed; padding: 8px 4px; text-align: center; vertical-align: middle; height: 60px; font-size: 11px; transition: 0.2s; }
+        .calendar-table td.period-label { font-weight: 700; color: white; background: #2a5f8f; border: 2px solid #1a3c6e; font-size: 11px; }
+
+        .calendar-table td.empty-slot { color: #aaa; cursor: pointer; background: #fafcfd; font-weight: 500; }
+        .calendar-table td.empty-slot:hover { background: #e3f0ff; color: #1a3c6e; font-weight: 700; box-shadow: inset 0 0 0 2px #2a5f8f; }
+
+        .calendar-table td.pending-akhwat { background: #fce4ec; font-weight: 600; color: #c2185b; cursor: default; }
+        .calendar-table td.approved-akhwat { background: #f8bbd0; font-weight: 700; color: #880e4f; cursor: default; }
+        .calendar-table td.ready-akhwat { background: #f48fb1; font-weight: 700; color: #4a0028; cursor: default; }
+
+        .calendar-table td.pending-ikhwan { background: #e3f2fd; font-weight: 600; color: #1565c0; cursor: default; }
+        .calendar-table td.approved-ikhwan { background: #90caf9; font-weight: 700; color: #0d47a1; cursor: default; }
+        .calendar-table td.ready-ikhwan { background: #64b5f6; font-weight: 700; color: #002171; cursor: default; }
+
+        .calendar-table td.my-booking { background: white !important; font-weight: 700; border: 3px solid #1a3c6e !important; cursor: default; }
+
+        .calendar-table td.past-date { background: #f5f5f5; color: #ccc; cursor: not-allowed; }
+
+        .history-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .history-table th { background: #f8fafc; padding: 12px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e0e0e0; font-weight: 700; }
+        .history-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .badge-pending-akhwat { background: #fce4ec; color: #c2185b; }
+        .badge-pending-ikhwan { background: #e3f2fd; color: #1565c0; }
+        .badge-approved-akhwat { background: #f8bbd0; color: #880e4f; }
+        .badge-approved-ikhwan { background: #90caf9; color: #0d47a1; }
+        .badge-ready-akhwat { background: #f48fb1; color: #4a0028; }
+        .badge-ready-ikhwan { background: #64b5f6; color: #002171; }
+        .badge-rejected { background: #f5f5f5; color: #888; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 20px; padding: 35px; width: 90%; max-width: 480px; animation: modalSlide 0.3s ease-out; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        @keyframes modalSlide { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal h3 { color: #1a3c6e; margin-bottom: 5px; font-size: 22px; }
+        .modal .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+        .modal .detail-info { background: #f8fafc; padding: 16px; border-radius: 10px; margin: 15px 0; font-size: 14px; line-height: 2; border: 1px solid #e8edf2; }
+        .modal .detail-info strong { color: #1a3c6e; }
+        .modal .form-group { margin-bottom: 18px; }
+        .modal label { display: block; font-weight: 700; font-size: 13px; color: #444; margin-bottom: 6px; }
+        .modal select, .modal textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-family: inherit; font-size: 14px; outline: none; }
+        .modal select:focus, .modal textarea:focus { border-color: #2a5f8f; box-shadow: 0 0 0 3px rgba(42,95,143,0.1); }
+        .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: 0 4px 12px rgba(39,174,96,0.3); }
+        .btn-submit:hover { background: linear-gradient(135deg, #219a52, #27ae60); transform: translateY(-2px); }
+        .btn-cancel { width: 100%; padding: 12px; background: #eee; color: #666; border: none; border-radius: 10px; margin-top: 10px; font-weight: 600; cursor: pointer; }
+        .btn-cancel:hover { background: #ddd; }
+
+        .toast { position: fixed; top: 25px; right: 25px; padding: 16px 22px; border-radius: 10px; color: white; font-weight: 600; font-size: 14px; z-index: 2000; animation: toastIn 0.4s ease-out; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        .toast-success { background: #27ae60; }
+        .toast-error { background: #e74c3c; }
+        .toast-info { background: #2980b9; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(120px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+        .empty-state { text-align: center; padding: 40px; color: #aaa; }
+        .empty-state .icon { font-size: 50px; margin-bottom: 10px; }
+
+        @media (max-width: 768px) {
+            .header { padding: 12px 15px; }
+            .tab-btn { padding: 8px 14px; font-size: 11px; }
+            .calendar-table th, .calendar-table td { font-size: 9px; padding: 4px 2px; }
+            .notif-dropdown { width: 280px; right: -50px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <img src="logopiwalandscape.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+            <div class="header-title">
+                <h2>📋 Dashboard Guru</h2>
+                <span>FITRAH ISLAMIC WORLD ACADEMY</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notif-container" onclick="toggleNotif()">
+                <span class="notif-bell">🔔</span>
+                <span class="notif-badge" id="notifBadge">0</span>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <span>Notifikasi</span>
+                        <button onclick="event.stopPropagation(); clearNotifications()">Hapus Semua</button>
+                    </div>
+                    <div class="notif-empty">Belum ada notifikasi</div>
+                </div>
+            </div>
+            <span class="user-email" id="userEmailDisplay">-</span>
+            <span class="user-role">GURU</span>
+            <button class="btn-logout" onclick="logout()">🚪 Keluar</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="selector-bar">
+            <label>🧪 Pilih Lab:</label>
+            <select id="labSelect" onchange="onLabChange()">
+                <option value="">-- Pilih Lab --</option>
+            </select>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn" onclick="switchTab('jadwal')">📅 Lihat Jadwal</button>
+            <button class="tab-btn" onclick="switchTab('riwayat')">📋 Riwayat Saya</button>
+        </div>
+
+        <div class="card">
+            <div id="tabJadwal" style="display:block;">
+                <div class="calendar-header">
+                    <h3 id="jadwalTitle">📅 Pilih lab terlebih dahulu</h3>
+                    <div class="week-nav">
+                        <button id="btnPrev" onclick="prevWeek()" disabled>◀ Sebelumnya</button>
+                        <span class="week-label" id="weekLabel">-</span>
+                        <button onclick="nextWeek()">Minggu Depan ▶</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="calendar-table">
+                        <thead><tr><th>Period</th><th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th><th>Sabtu</th></tr></thead>
+                        <tbody id="jadwalBody"><tr><td colspan="7"><div class="empty-state"><div class="icon">📅</div><p>Pilih lab untuk lihat jadwal</p></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tabRiwayat" style="display:none;">
+                <div class="table-wrapper">
+                    <table class="history-table">
+                        <thead><tr><th>Lab</th><th>Tipe</th><th>Tanggal</th><th>Period</th><th>Catatan</th><th>Status</th></tr></thead>
+                        <tbody id="riwayatBody"><tr><td colspan="6"><div class="empty-state"><div class="icon">🔬</div><p>Pilih lab dulu</p></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalBooking">
+        <div class="modal">
+            <h3>📝 Ajukan Booking</h3>
+            <p class="subtitle">Pilih tipe peminjam</p>
+            <div class="detail-info" id="modalDetail"></div>
+            <div class="form-group">
+                <label>👥 Tipe Peminjam *</label>
+                <select id="tipePeminjam">
+                    <option value="">-- Pilih Tipe --</option>
+                    <option value="akhwat">🎀 Akhwat</option>
+                    <option value="ikhwan">💙 Ikhwan</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>📝 Catatan <span style="font-weight:400;color:#999;">(opsional)</span></label>
+                <textarea id="catatanInput" rows="3" placeholder="Keperluan praktikum..."></textarea>
+            </div>
+            <button class="btn-submit" onclick="submitBooking()">✅ Ajukan Booking</button>
+            <button class="btn-cancel" onclick="closeBookingModal()">Batal</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqw6LUVLS7Uhza9ZwbhsI81oFMTsE1xyg",
+            authDomain: "bookinglabpiwa.firebaseapp.com",
+            projectId: "bookinglabpiwa",
+            storageBucket: "bookinglabpiwa.firebasestorage.app",
+            messagingSenderId: "793768426207",
+            appId: "1:793768426207:web:1abe1b8942d34cf621476a"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUserEmail = '';
+        let allLabs = [];
+        let selectedLab = null;
+        let currentTab = 'jadwal';
+        let currentWeekStart;
+        let myBookings = [];
+        let allBookingsForLab = [];
+        let pendingBooking = null;
+        let notifications = [];
+        let previousStatuses = {};
+
+        function checkAuth() {
+            const email = localStorage.getItem('userEmail');
+            const role = localStorage.getItem('userRole');
+            if (!email || role !== 'guru') { window.location.href = 'login.html'; return; }
+            currentUserEmail = email;
+            document.getElementById('userEmailDisplay').textContent = email;
+        }
+        function logout() { auth.signOut().then(() => { localStorage.clear(); window.location.href = 'login.html'; }); }
+
+        function showToast(msg, type) {
+            const ex = document.querySelector('.toast'); if (ex) ex.remove();
+            const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.animation = 'toastOut 0.3s ease-in forwards'; setTimeout(() => t.remove(), 300); }, 4000);
+        }
+
+        function toggleNotif() {
+            const dropdown = document.getElementById('notifDropdown');
+            dropdown.classList.toggle('show');
+            // Reset badge
+            if (dropdown.classList.contains('show')) {
+                document.getElementById('notifBadge').style.display = 'none';
+                document.getElementById('notifBadge').textContent = '0';
+            }
+        }
+
+        function clearNotifications() {
+            notifications = [];
+            renderNotifications();
+            document.getElementById('notifBadge').style.display = 'none';
+            document.getElementById('notifBadge').textContent = '0';
+        }
+
+        function addNotification(msg) {
+            notifications.unshift({ msg, time: new Date().toLocaleTimeString('id-ID') });
+            if (notifications.length > 50) notifications.pop();
+            renderNotifications();
+            // Update badge
+            const badge = document.getElementById('notifBadge');
+            badge.style.display = 'block';
+            badge.textContent = notifications.length;
+        }
+
+        function renderNotifications() {
+            const dropdown = document.getElementById('notifDropdown');
+            // Keep header
+            let html = '<div class="notif-dropdown-header"><span>Notifikasi</span><button onclick="event.stopPropagation(); clearNotifications()">Hapus Semua</button></div>';
+            if (notifications.length === 0) {
+                html += '<div class="notif-empty">Belum ada notifikasi</div>';
+            } else {
+                html += notifications.map(n => 
+                    `<div class="notif-item">${n.msg}<div class="time">${n.time}</div></div>`
+                ).join('');
+            }
+            dropdown.innerHTML = html;
+        }
+
+        function getMonday(d) { const date = new Date(d); const day = date.getDay(); date.setDate(date.getDate() + (day === 0 ? -6 : 1 - day)); date.setHours(0,0,0,0); return date; }
+        function formatDate(d) { const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
+        function formatDisplay(d) { return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }
+        function isPastDate(s) { const today = new Date(); today.setHours(0,0,0,0); const d = new Date(s); d.setHours(0,0,0,0); return d < today; }
+
+        async function loadLabs() {
+            const snap = await db.collection('laboratorium').get();
+            allLabs = [];
+            snap.forEach(doc => allLabs.push({id:doc.id,...doc.data()}));
+            const sel = document.getElementById('labSelect');
+            sel.innerHTML = '<option value="">-- Pilih Lab --</option>';
+            allLabs.forEach(l => { const o = document.createElement('option'); o.value=l.id; o.textContent=l.nama; sel.appendChild(o); });
+        }
+
+        function onLabChange() {
+            const id = document.getElementById('labSelect').value;
+            if (!id) { selectedLab = null; hideAll(); return; }
+            selectedLab = allLabs.find(l => l.id === id);
+            currentWeekStart = getMonday(new Date());
+            listenBookings();
+        }
+
+        function hideAll() {
+            document.getElementById('riwayatBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">🔬</div><p>Pilih lab dulu</p></div></td></tr>';
+            document.getElementById('jadwalBody').innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📅</div><p>Pilih lab dulu</p></div></td></tr>';
+            document.getElementById('jadwalTitle').textContent = '📅 Pilih lab terlebih dahulu';
+        }
+
+        function listenBookings() {
+            db.collection('bookings').orderBy('createdAt','desc').onSnapshot(snap => {
+                const all = [];
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    all.push({
+                        id: doc.id,
+                        guruEmail: data.guruEmail,
+                        labId: data.labId || data.LabId,
+                        labName: data.labName || data.LabName,
+                        tipe: data.tipe,
+                        tanggal: data.tanggal,
+                        period: data.period,
+                        catatan: data.catatan,
+                        status: data.status,
+                        rejectReason: data.rejectReason || data.alasanTolak || '',
+                        createdAt: data.createdAt
+                    });
+                });
+
+                const myBookingsNew = all.filter(b => b.guruEmail === currentUserEmail);
+                myBookingsNew.forEach(b => {
+                    const prev = previousStatuses[b.id];
+                    if (prev && prev !== b.status) {
+                        if (b.status === 'approved') {
+                            addNotification(`✅ Booking <b>${b.labName}</b> (${b.tanggal}, P${b.period}) disetujui!`);
+                            showToast('✅ Booking disetujui!', 'success');
+                        } else if (b.status === 'rejected') {
+                            const reason = b.rejectReason ? `<br>Alasan: ${b.rejectReason}` : '';
+                            addNotification(`❌ Booking <b>${b.labName}</b> (${b.tanggal}, P${b.period}) ditolak.${reason}`);
+                            showToast('❌ Booking ditolak: ' + (b.rejectReason || 'Tanpa alasan'), 'error');
+                        } else if (b.status === 'ready') {
+                            addNotification(`🔬 Lab <b>${b.labName}</b> (${b.tanggal}, P${b.period}) sudah siap!`);
+                            showToast('🔬 Lab sudah disiapkan!', 'info');
+                        }
+                    }
+                    previousStatuses[b.id] = b.status;
+                });
+
+                myBookings = myBookingsNew;
+                allBookingsForLab = selectedLab ? all.filter(b => b.labId === selectedLab.id) : [];
+                renderCurrentTab();
+            });
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach((b,i) => { b.classList.remove('active'); if ((tab==='jadwal'&&i===0)||(tab==='riwayat'&&i===1)) b.classList.add('active'); });
+            document.getElementById('tabJadwal').style.display = tab==='jadwal'?'block':'none';
+            document.getElementById('tabRiwayat').style.display = tab==='riwayat'?'block':'none';
+            renderCurrentTab();
+        }
+        function renderCurrentTab() { if (currentTab==='jadwal') renderJadwal(); else renderRiwayat(); }
+
+        function renderRiwayat() {
+            const body = document.getElementById('riwayatBody');
+            if (!selectedLab) return;
+            let data = myBookings.filter(b => b.labId === selectedLab.id);
+            if (data.length === 0) { body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📭</div><p>Belum ada booking di lab ini</p></div></td></tr>'; return; }
+            body.innerHTML = data.map(b => {
+                let badge = '';
+                const tipeClass = (b.tipe||'').toLowerCase() === 'akhwat' ? 'akhwat' : 'ikhwan';
+                const tipeEmoji = tipeClass === 'akhwat' ? '🎀' : '💙';
+                if (b.status==='pending') badge = `<span class="badge badge-pending-${tipeClass}">⏳ Menunggu</span>`;
+                else if (b.status==='approved') badge = `<span class="badge badge-approved-${tipeClass}">✅ Disetujui</span>`;
+                else if (b.status==='ready') badge = `<span class="badge badge-ready-${tipeClass}">🔬 Siap</span>`;
+                else if (b.status==='rejected') badge = `<span class="badge badge-rejected">❌ Ditolak${b.rejectReason?'<br><small>'+b.rejectReason+'</small>':''}</span>`;
+                return `<tr><td><strong>${b.labName||'-'}</strong></td><td>${tipeEmoji} ${tipeClass}</td><td>${b.tanggal}</td><td>Period ${b.period}</td><td>${b.catatan||'-'}</td><td>${badge}</td></tr>`;
+            }).join('');
+        }
+
+        function renderJadwal() {
+            if (!selectedLab) return;
+            document.getElementById('jadwalTitle').textContent = '📅 Jadwal - ' + selectedLab.nama;
+            
+            const thisMonday = getMonday(new Date());
+            document.getElementById('btnPrev').disabled = (formatDate(currentWeekStart) <= formatDate(thisMonday));
+            
+            const weekEnd = new Date(currentWeekStart); weekEnd.setDate(weekEnd.getDate()+5);
+            document.getElementById('weekLabel').textContent = formatDisplay(currentWeekStart) + ' — ' + formatDisplay(weekEnd);
+            const start = formatDate(currentWeekStart), end = formatDate(weekEnd);
+            let weekData = allBookingsForLab.filter(b => b.tanggal >= start && b.tanggal <= end && b.status !== 'rejected');
+            let html = '';
+            for (let p=1; p<=7; p++) {
+                html += '<tr><td class="period-label">P'+p+'</td>';
+                for (let d=0; d<6; d++) {
+                    const date = new Date(currentWeekStart); date.setDate(date.getDate()+d);
+                    const ds = formatDate(date); const past = isPastDate(ds);
+                    const bk = weekData.find(b => b.tanggal===ds && b.period===p);
+                    let cls='empty-slot', content='', onclick='';
+                    if (past) { cls='past-date'; content='⛔'; }
+                    else if (bk) {
+                        const tipeLower = (bk.tipe||'').toLowerCase();
+                        const tipeEmoji = tipeLower==='akhwat'?'🎀':'💙';
+                        const tipeSuffix = tipeLower==='akhwat'?'akhwat':'ikhwan';
+                        const statusIcon = bk.status==='pending'?'⏳':bk.status==='ready'?'🔬':'✅';
+                        if (bk.guruEmail===currentUserEmail) { cls='my-booking'; content=`${statusIcon}${tipeEmoji}`; }
+                        else if (bk.status==='pending') { cls='pending-'+tipeSuffix; content=`⏳${tipeEmoji}`; }
+                        else if (bk.status==='approved') { cls='approved-'+tipeSuffix; content=`✅${tipeEmoji}`; }
+                        else if (bk.status==='ready') { cls='ready-'+tipeSuffix; content=`🔬${tipeEmoji}`; }
+                    } else { cls='empty-slot'; content='➕'; onclick='onClickSlot(\''+ds+'\','+p+')'; }
+                    html += `<td class="${cls}" ${onclick?'onclick="'+onclick+'"':''}>${content}</td>`;
+                }
+                html += '</tr>';
+            }
+            document.getElementById('jadwalBody').innerHTML = html;
+        }
+
+        function prevWeek() { 
+            if (document.getElementById('btnPrev').disabled) return;
+            currentWeekStart.setDate(currentWeekStart.getDate()-7); 
+            renderJadwal(); 
+        }
+        function nextWeek() { currentWeekStart.setDate(currentWeekStart.getDate()+7); renderJadwal(); }
+
+        function onClickSlot(ds, p) {
+            if (isPastDate(ds)) { showToast('Tidak bisa booking tanggal lewat','error'); return; }
+            if (!selectedLab) return;
+            pendingBooking = { labId:selectedLab.id, labName:selectedLab.nama, tanggal:ds, period:p };
+            const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const d = new Date(ds);
+            document.getElementById('modalDetail').innerHTML = '<strong>🧪 Lab:</strong> '+selectedLab.nama+'<br><strong>📅 Hari/Tanggal:</strong> '+hari[d.getDay()]+', '+formatDisplay(d)+'<br><strong>⏰ Period:</strong> '+p;
+            document.getElementById('tipePeminjam').value = '';
+            document.getElementById('catatanInput').value = '';
+            document.getElementById('modalBooking').classList.add('active');
+        }
+        function closeBookingModal() { document.getElementById('modalBooking').classList.remove('active'); pendingBooking=null; }
+
+        async function submitBooking() {
+            if (!pendingBooking) return;
+            const tipe = document.getElementById('tipePeminjam').value.toLowerCase();
+            if (!tipe) { showToast('⚠️ Pilih tipe peminjam dulu!','error'); return; }
+            const catatan = document.getElementById('catatanInput').value.trim();
+            const btn = document.querySelector('.btn-submit'); btn.textContent='⏳...'; btn.disabled=true;
+            try {
+                await db.collection('bookings').add({
+                    guruEmail: currentUserEmail,
+                    labId: pendingBooking.labId,
+                    labName: pendingBooking.labName,
+                    tipe: tipe,
+                    tanggal: pendingBooking.tanggal,
+                    period: pendingBooking.period,
+                    catatan: catatan,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('✅ Booking diajukan!','success');
+                closeBookingModal();
+            } catch(e) { showToast('❌ Gagal: '+e.message,'error'); }
+            finally { btn.textContent='✅ Ajukan Booking'; btn.disabled=false; }
+        }
+
+        async function init() {
+            checkAuth();
+            currentWeekStart = getMonday(new Date());
+            await loadLabs();
+            document.getElementById('modalBooking').addEventListener('click',function(e){ if(e.target===this) closeBookingModal(); });
+            document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeBookingModal(); });
+            document.addEventListener('click',function(e){ 
+                if(!e.target.closest('.notif-container')) {
+                    document.getElementById('notifDropdown').classList.remove('show');
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>
